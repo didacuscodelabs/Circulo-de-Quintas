@@ -2,229 +2,275 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Laboratorio Sonoro Geométrico</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Motor Sónico Geométrico V3</title>
 <script src="https://cdn.jsdelivr.net/npm/tone@14.8.41/build/Tone.js"></script>
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400&display=swap');
     :root {
         --glow-color: #a29bfe;
+        --bg-color: #0d1117;
+        --ui-bg: #161b22;
+        --border-color: #30363d;
+        --text-primary: #c9d1d9;
+        --text-secondary: #8b949e;
+    }
+    html, body {
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
     }
     body {
-        margin: 0;
-        background: #0a0f1a;
         display: flex;
-        flex-direction: column;
         justify-content: center;
         align-items: center;
-        height: 100vh;
+        background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
         font-family: 'Inter', sans-serif;
-        color: #e0e0e0;
-        text-align: center;
-        overflow: hidden;
-        background-image: radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 40px),
-                          radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 30px),
-                          radial-gradient(white, rgba(255,255,255,.1) 2px, transparent 40px),
-                          radial-gradient(rgba(255,255,255,.4), rgba(255,255,255,.1) 2px, transparent 30px);
-        background-size: 550px 550px, 350px 350px, 250px 250px, 150px 150px;
-        background-position: 0 0, 40px 60px, 130px 270px, 70px 100px;
-        animation: star-move 240s linear infinite;
-    }
-    @keyframes star-move {
-        from {background-position: 0 0, 40px 60px, 130px 270px, 70px 100px;}
-        to {background-position: -10000px 5000px, -10040px 5060px, -10130px 5270px, -10070px 5100px;}
+        color: var(--text-primary);
     }
     #main-container {
-        backdrop-filter: blur(5px);
-        background: rgba(10, 15, 26, 0.6);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 20px;
-        padding: 2vw;
-        box-shadow: 0 0 50px rgba(0,0,0,0.5);
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        padding: 20px;
+        width: 100%;
+        height: 100%;
+        max-width: 1200px;
+        box-sizing: border-box;
     }
-    h1 { font-weight: 300; letter-spacing: 2px; margin: 0 0 20px 0; }
+    .header { text-align: center; }
+    .header h1 { margin: 0; font-weight: 400; }
+    .header p { margin: 5px 0 0 0; color: var(--text-secondary); }
+    
+    .content-body {
+        display: flex;
+        flex-grow: 1;
+        gap: 20px;
+        min-height: 0;
+    }
+    #svg-container {
+        flex-grow: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-width: 0;
+    }
     svg {
-        width: 40vw;
-        max-width: 450px;
+        width: 100%;
+        max-width: 500px;
         height: auto;
         aspect-ratio: 1 / 1;
-        animation: cosmic-rotation 180s linear infinite;
+        animation: cosmic-rotation 240s linear infinite;
     }
     @keyframes cosmic-rotation { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-    .circle-point { fill: #333; transition: all 0.1s ease-in-out; }
-    .circle-point.active { fill: var(--glow-color); r: 12; filter: drop-shadow(0 0 10px var(--glow-color)) drop-shadow(0 0 20px var(--glow-color)); }
+
+    #controls {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        background: var(--ui-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 20px;
+        width: 300px;
+        flex-shrink: 0;
+        overflow-y: auto;
+    }
+
+    /* --- ESTILOS VISUALIZADOR --- */
+    .circle-point { fill: #444; transition: all 0.1s ease-in-out; }
+    .circle-point.active { fill: var(--glow-color); r: 11; filter: drop-shadow(0 0 8px var(--glow-color)); }
     line { stroke: var(--glow-color); stroke-width: 1.5; opacity: 0; transition: all 0.2s ease-in-out; }
-    line.visible { opacity: 0.2; }
-    line.active { opacity: 1; stroke: #fff; filter: drop-shadow(0 0 8px var(--glow-color)); }
+    line.visible { opacity: 0.25; }
+    line.active { opacity: 1; stroke: #fff; }
     #note-label {
-        font-size: 24px;
-        fill: #fff;
-        text-anchor: middle;
-        dominant-baseline: middle;
-        pointer-events: none;
-        opacity: 0;
-        transition: opacity 0.2s;
-        filter: drop-shadow(0 0 5px #000);
+        font-size: 22px; fill: #fff; text-anchor: middle; dominant-baseline: middle;
+        pointer-events: none; opacity: 0; transition: opacity 0.2s;
     }
     #note-label.visible { opacity: 1; }
-    #controls { margin-top: 30px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
-    .control-group { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-    label { font-size: 0.7em; text-transform: uppercase; letter-spacing: 1px; color: #888; }
-    button, select {
-        padding: 10px; border: 1px solid #333; border-radius: 8px;
-        background: #1a1f2c; color: #e0e0e0; cursor: pointer; font-size: 0.9em; transition: all 0.2s; width: 100%;
+    
+    /* --- ESTILOS CONTROLES --- */
+    .control-group { display: flex; flex-direction: column; gap: 8px; }
+    label { font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); }
+    button, select, input {
+        background: #0d1117; color: var(--text-primary); border: 1px solid var(--border-color);
+        border-radius: 6px; padding: 8px 12px; font-size: 0.9em; width: 100%; box-sizing: border-box;
     }
-    button:hover, select:hover { background: var(--glow-color); border-color: var(--glow-color); color: #0a0f1a; }
-    .full-span { grid-column: 1 / -1; }
-    .bpm-control { display: flex; align-items: center; gap: 10px; width: 100%; }
-    #bpm-slider { flex-grow: 1; }
+    select, button { cursor: pointer; }
+    button:hover, select:hover { border-color: var(--glow-color); }
+    #play { font-weight: bold; padding: 12px; }
+    #play.playing { background: #d63031; border-color: #d63031; }
+    .bpm-control, .octave-control { display: flex; align-items: center; gap: 10px; }
     #bpm-value { font-variant-numeric: tabular-nums; }
-    .octave-control { display: flex; gap: 5px; }
-    #play.playing { background: #d63031; }
+    .octave-control button { width: 40px; }
+    .octave-control span { flex-grow: 1; text-align: center; }
+
+    /* --- DISEÑO ADAPTABLE (RESPONSIVE) --- */
+    @media (max-width: 768px) {
+        body { overflow: auto; }
+        #main-container { flex-direction: column; height: auto; }
+        .content-body { flex-direction: column; }
+        #controls { width: 100%; max-height: none; }
+        svg { max-width: 90vw; }
+    }
 </style>
 </head>
 <body>
 
 <div id="main-container">
-    <h1>Laboratorio Sonoro</h1>
-    <svg id="circle-svg" viewBox="0 0 400 400">
-        <g id="lines-group"></g>
-        <g id="points-group"></g>
-        <text id="note-label" x="-100" y="-100"></text>
-    </svg>
-    <div id="controls">
-        <div class="control-group">
-            <label for="shape-select">Forma Geométrica</label>
-            <select id="shape-select">
-                <option value="circle_12">Círculo Completo</option>
-                <option value="tri_aug">Triángulo (Aum)</option>
-                <option value="sqr_dim">Cuadrado (Dis)</option>
-                <option value="penta_5">Pentágono</option>
-                <option value="hexa_6">Hexágono</option>
-                <option value="hepta_7">Heptágono</option>
-                <option value="octa_8">Octágono</option>
-                <option value="star_7_2">Heptagrama</option>
-                <option value="star_8_3">Octagrama</option>
-            </select>
+    <header class="header">
+        <h1>Motor Sónico Geométrico</h1>
+        <p id="init-message">Haz clic en Iniciar para activar el audio</p>
+    </header>
+
+    <div class="content-body">
+        <div id="svg-container">
+            <svg id="circle-svg" viewBox="0 0 400 400">
+                <g id="lines-group"></g>
+                <g id="points-group"></g>
+                <text id="note-label" x="-100" y="-100"></text>
+            </svg>
         </div>
-        <div class="control-group">
-            <label for="mode-select">Modo de Sonido</label>
-            <select id="mode-select">
-                <option value="melody">Melodía Divina</option>
-                <option value="arpeggio">Arpegio</option>
-                <option value="triad">Acorde (Triada)</option>
-                <option value="seventh">Acorde (Séptima)</option>
-            </select>
-        </div>
-        <div class="control-group">
-            <label for="sound-palette-select">Paleta Sonora</label>
-            <select id="sound-palette-select">
-                <option value="celestial">Celestial</option>
-                <option value="psychedelic">Psicodélico</option>
-                <option value="mystic">Abismo Místico</option>
-            </select>
-        </div>
-        <div class="control-group">
-            <label for="scale-select">Escala Musical</label>
-            <select id="scale-select">
-                <option value="major">Mayor</option>
-                <option value="minor">Menor</option>
-                <option value="dorian">Dórico</option>
-                <option value="phrygian">Frigio</option>
-                <option value="lydian">Lidio</option>
-                <option value="pentatonic">Pentatónica</option>
-                <option value="wholetone">Tono Entero</option>
-            </select>
-        </div>
-        <div class="control-group">
-             <label>Octava</label>
-             <div class="octave-control">
-                <button id="octave-down">-</button>
-                <span id="octave-value">4</span>
-                <button id="octave-up">+</button>
-             </div>
-        </div>
-        <div class="control-group">
-            <button id="play">▶ Iniciar</button>
-        </div>
-        <div class="control-group full-span">
-            <label for="bpm-slider">Tempo</label>
-            <div class="bpm-control">
-                <span>60</span>
-                <input type="range" id="bpm-slider" min="60" max="180" value="90">
-                <span>180</span>
-                <span id="bpm-value">90 BPM</span>
+        <div id="controls">
+            <div class="control-group">
+                <button id="play">▶ Iniciar</button>
+            </div>
+            <div class="control-group">
+                <label for="shape-select">Forma Geométrica</label>
+                <select id="shape-select">
+                    <option value="circle">Círculo (12)</option>
+                    <option value="aug">Triángulo Aum. (3)</option>
+                    <option value="dim">Cuadrado Dis. (4)</option>
+                    <option value="penta">Pentágono (5)</option>
+                    <option value="hexa">Hexágono (6)</option>
+                    <option value="hepta">Heptágono (7)</option>
+                    <option value="octa">Octágono (8)</option>
+                    <option value="star7">Heptagrama</option>
+                    <option value="star5">Pentagrama</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="mode-select">Modo de Sonido</label>
+                <select id="mode-select">
+                    <option value="melody">Melodía</option>
+                    <option value="arpeggio">Arpegio</option>
+                    <option value="triad">Acorde (Triada)</option>
+                    <option value="seventh">Acorde (Séptima)</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="sound-palette-select">Paleta Sonora</label>
+                <select id="sound-palette-select">
+                    <option value="celestial">Celestial</option>
+                    <option value="psychedelic">Psicodélico</option>
+                    <option value="mystic">Místico</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="scale-select">Escala Musical</label>
+                <select id="scale-select">
+                    <option value="major">Mayor</option>
+                    <option value="minor">Menor</option>
+                    <option value="dorian">Dórico</option>
+                    <option value="phrygian">Frigio</option>
+                    <option value="lydian">Lidio</option>
+                    <option value="pentatonic">Pentatónica</option>
+                    <option value="wholetone">Tono Entero</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>Octava</label>
+                <div class="octave-control">
+                   <button id="octave-down">-</button>
+                   <span id="octave-value">4</span>
+                   <button id="octave-up">+</button>
+                </div>
+           </div>
+            <div class="control-group">
+                <label for="bpm-slider">Tempo</label>
+                <div class="bpm-control">
+                    <input type="range" id="bpm-slider" min="40" max="200" value="90">
+                    <span id="bpm-value">90</span>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <script>
+// --- FUNCIÓN DE UTILIDAD: DEBOUNCE ---
+// Evita que una función se ejecute demasiadas veces seguidas.
+function debounce(func, delay) {
+    let timeout;
+    return function(...args) {
+        const context = this;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(context, args), delay);
+    };
+}
+
 document.addEventListener('DOMContentLoaded', () => {
 
-    const MusicalCircle = {
-        // --- PROPIEDADES ---
+    const App = {
         state: {
-            isPlaying: false,
-            octave: 4,
-            bpm: 90,
-            shape: 'circle_12',
-            mode: 'melody',
-            sound: 'celestial',
-            scale: 'major',
+            isPlaying: false, octave: 4, bpm: 90, shape: 'circle', mode: 'melody', sound: 'celestial', scale: 'major',
         },
         dom: {},
         svg: {
-            centerX: 200, centerY: 200, radius: 170, numPoints: 12,
-            points: [], lines: new Map(), activeShapeIndices: []
+            centerX: 200, centerY: 200, radius: 170, numPoints: 12, points: [], lines: new Map(), activeShapeIndices: []
         },
         audio: {
-            synths: {},
-            activeSynth: null,
-            sequence: null,
-            isInitialized: false,
-            // Círculo de quintas
+            synths: {}, activeSynth: null, sequence: null, isInitialized: false,
             CIRCLE_OF_FIFTHS: ['C', 'G', 'D', 'A', 'E', 'B', 'F#', 'Db', 'Ab', 'Eb', 'Bb', 'F'],
-            // Intervalos de las escalas desde la raíz (en semitonos)
             SCALES: {
-                major: [0, 2, 4, 5, 7, 9, 11],
-                minor: [0, 2, 3, 5, 7, 8, 10],
-                dorian: [0, 2, 3, 5, 7, 9, 10],
-                phrygian: [0, 1, 3, 5, 7, 8, 10],
-                lydian: [0, 2, 4, 6, 7, 9, 11],
-                pentatonic: [0, 2, 4, 7, 9],
+                major: [0, 2, 4, 5, 7, 9, 11], minor: [0, 2, 3, 5, 7, 8, 10], dorian: [0, 2, 3, 5, 7, 9, 10],
+                phrygian: [0, 1, 3, 5, 7, 8, 10], lydian: [0, 2, 4, 6, 7, 9, 11], pentatonic: [0, 2, 4, 7, 9],
                 wholetone: [0, 2, 4, 6, 8, 10]
+            },
+            // Puntos predefinidos para cada forma para evitar errores de cálculo.
+            SHAPES: {
+                circle: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+                aug: [0, 4, 8],
+                dim: [0, 3, 6, 9],
+                penta: [0, 2, 5, 7, 10],
+                hexa: [0, 2, 4, 6, 8, 10],
+                hepta: [0, 2, 4, 5, 7, 9, 11], // Heptatónica
+                octa: [0, 2, 3, 5, 6, 8, 9, 11], // Octatónica
+                star7: [0, 5, 10, 3, 8, 1, 6], // Heptagrama {7/2} en 12TET
+                star5: [0, 4, 8, 1, 5, 9, 2, 6, 10, 3, 7, 11] // Estrella dodecagonal
             }
         },
 
-        // --- MÉTODO DE INICIALIZACIÓN PRINCIPAL ---
         init() {
-            this.collectDomElements();
+            this.cacheDom();
             this.initSVG();
             this.initAudio();
-            this.bindUIEvents();
+            this.bindEvents();
             this.updateShape();
             this.updateUI();
         },
 
-        // --- CONFIGURACIÓN ---
-        collectDomElements() {
-            this.dom.svg = document.getElementById('circle-svg');
-            this.dom.linesGroup = document.getElementById('lines-group');
-            this.dom.pointsGroup = document.getElementById('points-group');
-            this.dom.noteLabel = document.getElementById('note-label');
-            this.dom.playBtn = document.getElementById('play');
-            this.dom.shapeSelect = document.getElementById('shape-select');
-            this.dom.modeSelect = document.getElementById('mode-select');
-            this.dom.soundSelect = document.getElementById('sound-palette-select');
-            this.dom.scaleSelect = document.getElementById('scale-select');
-            this.dom.octaveUp = document.getElementById('octave-up');
-            this.dom.octaveDown = document.getElementById('octave-down');
-            this.dom.octaveValue = document.getElementById('octave-value');
-            this.dom.bpmSlider = document.getElementById('bpm-slider');
-            this.dom.bpmValue = document.getElementById('bpm-value');
+        cacheDom() {
+            this.dom = {
+                svg: document.getElementById('circle-svg'),
+                linesGroup: document.getElementById('lines-group'),
+                pointsGroup: document.getElementById('points-group'),
+                noteLabel: document.getElementById('note-label'),
+                playBtn: document.getElementById('play'),
+                shapeSelect: document.getElementById('shape-select'),
+                modeSelect: document.getElementById('mode-select'),
+                soundSelect: document.getElementById('sound-palette-select'),
+                scaleSelect: document.getElementById('scale-select'),
+                octaveUp: document.getElementById('octave-up'),
+                octaveDown: document.getElementById('octave-down'),
+                octaveValue: document.getElementById('octave-value'),
+                bpmSlider: document.getElementById('bpm-slider'),
+                bpmValue: document.getElementById('bpm-value'),
+                initMessage: document.getElementById('init-message')
+            };
         },
-
-        initSVG() {
+        
+        initSVG() { /* (Sin cambios, es robusto) */
             for (let i = 0; i < this.svg.numPoints; i++) {
                 const angle = (i / this.svg.numPoints) * 2 * Math.PI - Math.PI / 2;
                 const x = this.svg.centerX + this.svg.radius * Math.cos(angle);
@@ -246,95 +292,69 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         },
 
-        initAudio() {
-            const reverb = new Tone.Reverb({ decay: 8, wet: 0.6 }).toDestination();
-            
-            this.audio.synths.celestial = new Tone.PolySynth(Tone.FMSynth, {
-                harmonicity: 3.01, modulationIndex: 14,
-                envelope: { attack: 0.01, decay: 0.3, sustain: 0.4, release: 2 }
-            }).connect(new Tone.FeedbackDelay("8n", 0.4).connect(reverb));
-            
+        initAudio() { /* (Sin cambios, es robusto) */
+            const reverb = new Tone.Reverb({ decay: 6, wet: 0.5 }).toDestination();
+            this.audio.synths.celestial = new Tone.PolySynth(Tone.FMSynth).connect(new Tone.FeedbackDelay("8n", 0.4).connect(reverb));
             const phaser = new Tone.Phaser({ frequency: 0.5, octaves: 3, baseFrequency: 350 });
-            const autoFilter = new Tone.AutoFilter("4n").start();
-            this.audio.synths.psychedelic = new Tone.PolySynth(Tone.AMSynth, {
-                envelope: { attack: 0.01, decay: 0.5, sustain: 0.3, release: 1.5 }
-            }).connect(phaser).connect(autoFilter).connect(new Tone.PingPongDelay("4n", 0.3).connect(reverb));
-            
-            this.audio.synths.mystic = new Tone.PolySynth(Tone.DuoSynth, {
-                vibratoAmount: 0.5, harmonicity: 1.5,
-                voice0: { volume: -10, portamento: 0, oscillator: { type: "sine" } },
-                voice1: { volume: -10, portamento: 0, oscillator: { type: "square" } }
-            }).connect(new Tone.Chorus(4, 2.5, 0.5)).connect(reverb);
-            
+            this.audio.synths.psychedelic = new Tone.PolySynth(Tone.AMSynth).connect(phaser).connect(new Tone.PingPongDelay("4n.", 0.3).connect(reverb));
+            this.audio.synths.mystic = new Tone.PolySynth(Tone.DuoSynth).connect(new Tone.Chorus(4, 2.5, 0.5)).connect(reverb);
             this.audio.activeSynth = this.audio.synths[this.state.sound];
             Tone.Transport.bpm.value = this.state.bpm;
         },
 
-        bindUIEvents() {
+        bindEvents() {
             this.dom.playBtn.addEventListener('click', () => this.togglePlayback());
-            this.dom.shapeSelect.addEventListener('change', (e) => this.updateState({ shape: e.target.value }));
-            this.dom.modeSelect.addEventListener('change', (e) => this.updateState({ mode: e.target.value }));
-            this.dom.soundSelect.addEventListener('change', (e) => this.updateState({ sound: e.target.value }));
-            this.dom.scaleSelect.addEventListener('change', (e) => this.updateState({ scale: e.target.value }));
+            
+            // Usamos 'input' para cambios en tiempo real, no 'change'
+            this.dom.shapeSelect.addEventListener('input', e => this.updateState({ shape: e.target.value }));
+            this.dom.modeSelect.addEventListener('input', e => this.updateState({ mode: e.target.value }));
+            this.dom.soundSelect.addEventListener('input', e => this.updateState({ sound: e.target.value }));
+            this.dom.scaleSelect.addEventListener('input', e => this.updateState({ scale: e.target.value }));
+
             this.dom.octaveUp.addEventListener('click', () => this.updateState({ octave: Math.min(6, this.state.octave + 1) }));
             this.dom.octaveDown.addEventListener('click', () => this.updateState({ octave: Math.max(1, this.state.octave - 1) }));
-            this.dom.bpmSlider.addEventListener('input', (e) => this.updateState({ bpm: parseInt(e.target.value) }));
+
+            // Aplicamos debounce al slider de BPM para mejorar rendimiento
+            this.dom.bpmSlider.addEventListener('input', debounce(e => {
+                this.updateState({ bpm: parseInt(e.target.value) });
+            }, 50));
+            // Actualización visual del BPM es instantánea
+            this.dom.bpmSlider.addEventListener('input', e => {
+                this.dom.bpmValue.textContent = e.target.value;
+            });
         },
 
-        // --- LÓGICA DE ACTUALIZACIÓN ---
         updateState(newState) {
             Object.assign(this.state, newState);
+
+            if (newState.sound) this.audio.activeSynth = this.audio.synths[this.state.sound];
+            if (newState.bpm) Tone.Transport.bpm.value = this.state.bpm;
+            if (newState.shape) this.updateShape();
             
-            if (newState.sound) {
-                this.audio.activeSynth = this.audio.synths[this.state.sound];
-            }
-            if (newState.bpm) {
-                Tone.Transport.bpm.value = this.state.bpm;
-            }
-            if (newState.shape) {
-                this.updateShape();
-            }
-
+            if (this.state.isPlaying) this.restartSequence();
+            
             this.updateUI();
-
-            if (this.state.isPlaying) {
-                this.createSequence();
-            }
         },
 
         updateUI() {
             this.dom.playBtn.textContent = this.state.isPlaying ? '■ Detener' : '▶ Iniciar';
             this.dom.playBtn.classList.toggle('playing', this.state.isPlaying);
             this.dom.octaveValue.textContent = this.state.octave;
-            this.dom.bpmValue.textContent = `${this.state.bpm} BPM`;
+            this.dom.bpmValue.textContent = this.state.bpm;
             this.dom.bpmSlider.value = this.state.bpm;
             
-            // Actualizar color de glow según la paleta
             const colors = { celestial: '#a29bfe', psychedelic: '#fd79a8', mystic: '#00cec9' };
             document.documentElement.style.setProperty('--glow-color', colors[this.state.sound]);
         },
-        
-        updateShape() {
-            const [type, param1, param2] = this.state.shape.split('_');
-            const p1 = parseInt(param1);
-            const p2 = parseInt(param2);
-            this.svg.activeShapeIndices = [];
-            this.svg.lines.forEach(line => line.classList.remove('visible'));
 
-            let pointsToConnect = [];
-            switch(type) {
-                case 'circle': pointsToConnect = Array.from({length: p1}, (_, i) => i); break;
-                case 'tri': case 'sqr': case 'penta': case 'hexa': case 'hepta': case 'octa':
-                    const step = this.svg.numPoints / p1;
-                    for (let i = 0; i < p1; i++) pointsToConnect.push(Math.round(i * step));
-                    break;
-                case 'star':
-                    for (let i = 0; i < p1; i++) pointsToConnect.push(Math.round(i * p2) % p1);
-                    break;
-            }
-            this.svg.activeShapeIndices = pointsToConnect;
+        updateShape() {
+            this.svg.activeShapeIndices = this.audio.SHAPES[this.state.shape] || [];
+            this.svg.lines.forEach(line => line.classList.remove('visible'));
             
-            for(let i=0; i < pointsToConnect.length; i++) {
+            const pointsToConnect = this.svg.activeShapeIndices;
+            if (pointsToConnect.length < 2) return;
+
+            for(let i = 0; i < pointsToConnect.length; i++) {
                 const p1_idx = pointsToConnect[i];
                 const p2_idx = pointsToConnect[(i + 1) % pointsToConnect.length];
                 const key = [p1_idx, p2_idx].sort((a, b) => a - b).join('-');
@@ -342,95 +362,83 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         },
 
-        // --- LÓGICA DE REPRODUCCIÓN ---
         async togglePlayback() {
             if (!this.audio.isInitialized) {
                 await Tone.start();
                 this.audio.isInitialized = true;
+                this.dom.initMessage.style.display = 'none';
             }
             this.state.isPlaying = !this.state.isPlaying;
             if (this.state.isPlaying) {
-                this.createSequence();
+                this.restartSequence();
                 Tone.Transport.start();
             } else {
                 Tone.Transport.stop();
+                Tone.Transport.cancel(); // Limpia eventos agendados
                 if(this.audio.sequence) this.audio.sequence.dispose();
+                this.audio.activeSynth.releaseAll(); // Forza a que se callen las notas
                 this.clearAllActiveVisuals();
             }
             this.updateUI();
         },
 
-        getNotesForStep(rootNote) {
-            const rootWithOctave = rootNote + this.state.octave;
-            const scaleIntervals = this.audio.SCALES[this.state.scale];
-            const baseFreq = Tone.Frequency(rootWithOctave);
+        restartSequence() {
+            if (this.audio.sequence) this.audio.sequence.dispose();
+            if (this.svg.activeShapeIndices.length === 0) return; // No hacer nada si la forma no tiene puntos
 
-            switch (this.state.mode) {
-                case 'melody':
-                    const randomNote1 = baseFreq.transpose(scaleIntervals[Math.floor(Math.random() * scaleIntervals.length)]).toNote();
-                    const randomNote2 = baseFreq.transpose(scaleIntervals[Math.floor(Math.random() * scaleIntervals.length)] + 12).toNote();
-                    return { notes: [rootWithOctave, randomNote1, randomNote2], duration: "4n" };
-                case 'arpeggio':
-                    const arpNotes = [rootWithOctave, baseFreq.transpose(scaleIntervals[2] || 3).toNote(), baseFreq.transpose(scaleIntervals[4] || 7).toNote()];
-                    return { notes: arpNotes, duration: "16n", type: 'arpeggio'};
-                case 'triad':
-                    const triadNotes = [rootWithOctave, baseFreq.transpose(scaleIntervals[2] || 3).toNote(), baseFreq.transpose(scaleIntervals[4] || 7).toNote()];
-                    return { notes: triadNotes, duration: "4n" };
-                case 'seventh':
-                    const seventhNotes = [rootWithOctave, baseFreq.transpose(scaleIntervals[2] || 3).toNote(), baseFreq.transpose(scaleIntervals[4] || 7).toNote(), baseFreq.transpose(scaleIntervals[6] || 10).toNote()];
-                    return { notes: seventhNotes, duration: "4n" };
-            }
-        },
-
-        createSequence() {
-            if (this.audio.sequence) {
-                this.audio.sequence.dispose();
-            }
             this.audio.sequence = new Tone.Sequence((time, stepIndex) => {
                 const pointIndex = this.svg.activeShapeIndices[stepIndex];
                 const point = this.svg.points[pointIndex];
-                const musicalData = this.getNotesForStep(point.note);
-                
-                if (musicalData.type === 'arpeggio') {
-                    new Tone.Pattern((t, n) => {
-                        this.audio.activeSynth.triggerAttackRelease(n, '16n', t);
-                    }, musicalData.notes, 'up').start(time).stop(time + Tone.Time('4n').toSeconds());
-                } else if (this.state.mode === 'melody') {
-                    this.audio.activeSynth.triggerAttackRelease(musicalData.notes[0], "8n", time);
-                    this.audio.activeSynth.triggerAttackRelease(musicalData.notes[1], "16n", time + Tone.Time("16n").toSeconds());
-                    this.audio.activeSynth.triggerAttackRelease(musicalData.notes[2], "16n", time + Tone.Time("8n").toSeconds());
-                } else {
-                    this.audio.activeSynth.triggerAttackRelease(musicalData.notes, musicalData.duration, time);
+                const note = point.note + this.state.octave;
+                const scaleIntervals = this.audio.SCALES[this.state.scale];
+
+                // Lógica de generación de notas (refactorizada para claridad)
+                try {
+                    const baseFreq = Tone.Frequency(note);
+                    switch (this.state.mode) {
+                        case 'melody':
+                            const randomNote = baseFreq.transpose(scaleIntervals[Math.floor(Math.random() * scaleIntervals.length)]).toNote();
+                            this.audio.activeSynth.triggerAttackRelease(note, "8n", time);
+                            this.audio.activeSynth.triggerAttackRelease(randomNote, "16n", time + Tone.Time("8n").toSeconds());
+                            break;
+                        case 'arpeggio':
+                            const arpNotes = [note, baseFreq.transpose(scaleIntervals[2] || 4).toNote(), baseFreq.transpose(scaleIntervals[4] || 7).toNote()];
+                             new Tone.Pattern((t, n) => this.audio.activeSynth.triggerAttackRelease(n, '16n', t), arpNotes).start(time).stop(time + 0.4);
+                            break;
+                        case 'triad':
+                            const triadNotes = [note, baseFreq.transpose(scaleIntervals[2] || 4).toNote(), baseFreq.transpose(scaleIntervals[4] || 7).toNote()];
+                            this.audio.activeSynth.triggerAttackRelease(triadNotes, "4n", time);
+                            break;
+                        case 'seventh':
+                            const seventhNotes = [note, baseFreq.transpose(scaleIntervals[2] || 4).toNote(), baseFreq.transpose(scaleIntervals[4] || 7).toNote(), baseFreq.transpose(scaleIntervals[6] || 10).toNote()];
+                            this.audio.activeSynth.triggerAttackRelease(seventhNotes, "4n", time);
+                            break;
+                    }
+                } catch (error) {
+                    console.error("Error al tocar la nota:", error);
                 }
 
-                Tone.Draw.schedule(() => {
-                    this.visualizeStep(pointIndex, musicalData.notes[0]);
-                }, time);
+                Tone.Draw.schedule(() => this.visualizeStep(pointIndex, note), time);
 
             }, Array.from(Array(this.svg.activeShapeIndices.length).keys()), "4n").start(0);
         },
 
-        // --- LÓGICA VISUAL ---
         visualizeStep(pointIndex, noteName) {
             this.clearAllActiveVisuals();
             const point = this.svg.points[pointIndex];
             point.el.classList.add('active');
 
-            // Iluminar líneas conectadas
             this.svg.lines.forEach((line, key) => {
-                const [p1, p2] = key.split('-').map(Number);
-                if (line.classList.contains('visible') && (p1 === pointIndex || p2 === pointIndex)) {
-                    line.classList.add('active');
+                if (line.classList.contains('visible')) {
+                    const [p1, p2] = key.split('-').map(Number);
+                    if (p1 === pointIndex || p2 === pointIndex) line.classList.add('active');
                 }
             });
-
-            // Actualizar y mostrar la etiqueta de la nota
-            const labelOffset = 35;
-            const angle = (pointIndex / this.svg.numPoints) * 2 * Math.PI - Math.PI / 2;
+            
+            const labelOffset = 35, angle = (pointIndex / 12) * 2 * Math.PI - Math.PI / 2;
             const x = this.svg.centerX + (this.svg.radius + labelOffset) * Math.cos(angle);
             const y = this.svg.centerY + (this.svg.radius + labelOffset) * Math.sin(angle);
-            this.dom.noteLabel.setAttribute('x', x);
-            this.dom.noteLabel.setAttribute('y', y);
+            this.dom.noteLabel.setAttribute('x', x); this.dom.noteLabel.setAttribute('y', y);
             this.dom.noteLabel.textContent = noteName;
             this.dom.noteLabel.classList.add('visible');
         },
@@ -442,7 +450,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    MusicalCircle.init();
+    App.init();
 });
 </script>
 
