@@ -1,224 +1,86 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Círculo de Quintas Geométrico</title>
-    <style>
-        :root {
-            --bg-color: #1a1a1d;
-            --primary-color: #c3073f;
-            --secondary-color: #6f2232;
-            --text-color: #f5f5f5;
-            --highlight-color: #950740;
-        }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            overflow: hidden;
-        }
-        .main-container {
-            display: flex;
-            align-items: center;
-            gap: 40px;
-        }
-        #music-visualizer {
-            position: relative;
-            width: 400px;
-            height: 400px;
-        }
-        #circle-svg {
-            width: 100%;
-            height: 100%;
-        }
-        .note-text {
-            font-size: 20px;
-            fill: var(--text-color);
-            text-anchor: middle;
-            dominant-baseline: middle;
-            font-weight: bold;
-            pointer-events: none;
-        }
-        .note-circle {
-            fill: var(--secondary-color);
-            transition: fill 0.2s ease;
-        }
-        .note-circle.active {
-            fill: var(--primary-color);
-            stroke: var(--highlight-color);
-            stroke-width: 4px;
-        }
-        #shape-polygon {
-            fill: rgba(195, 7, 63, 0.25);
-            stroke: var(--primary-color);
-            stroke-width: 3px;
-            pointer-events: none;
-            transition: all 0.3s ease-in-out;
-        }
-        .controls {
-            background-color: rgba(0,0,0,0.2);
-            padding: 20px;
-            border-radius: 12px;
-            border: 1px solid var(--secondary-color);
-            width: 250px;
-        }
-        .control-group {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 14px;
-            color: #aaa;
-        }
-        select, button {
-            width: 100%;
-            padding: 12px;
-            font-size: 16px;
-            border-radius: 8px;
-            border: none;
-            background-color: var(--secondary-color);
-            color: var(--text-color);
-            cursor: pointer;
-        }
-        button {
-            background-color: var(--primary-color);
-            font-weight: bold;
-            transition: background-color 0.2s;
-        }
-        button:hover {
-            background-color: var(--highlight-color);
-        }
-        .rotation-controls {
-            display: flex;
-            gap: 10px;
-        }
-        #info-display {
-            margin-top: 15px;
-            padding: 10px;
-            background: #2a2a2e;
-            border-radius: 8px;
-            min-height: 40px;
-            text-align: center;
-        }
-        #info-display h3 {
-            margin: 0 0 5px 0;
-            color: #aaa;
-            font-size: 14px;
-        }
-        #selected-notes {
-            font-size: 18px;
-            font-weight: bold;
-            color: var(--primary-color);
-        }
-    </style>
-</head>
-<body>
+document.addEventListener('DOMContentLoaded', () => {
+    // --- CONFIGURACIÓN INICIAL ---
+    const synth = new Tone.PolySynth(Tone.Synth).toDestination();
+    const svg = document.getElementById('circle-svg');
+    const shapePolygon = document.getElementById('shape-polygon');
+    const selectedNotesDiv = document.getElementById('selected-notes');
+    const shapeSelector = document.getElementById('shape-selector');
+    const rotateLeftBtn = document.getElementById('rotate-left');
+    const rotateRightBtn = document.getElementById('rotate-right');
+    const playButton = document.getElementById('play-button');
 
-<h1>Círculo de Quintas Geométrico</h1>
+    const notesInCircle = [ // Ordenado por círculo de quintas
+        { name: 'C', scientific: 'C4' }, { name: 'G', scientific: 'G4' },
+        { name: 'D', scientific: 'D4' }, { name: 'A', scientific: 'A4' },
+        { name: 'E', scientific: 'E4' }, { name: 'B', scientific: 'B4' },
+        { name: 'F#', scientific: 'F#4' }, { name: 'C#', scientific: 'C#4' },
+        { name: 'G#', scientific: 'G#4' }, { name: 'D#', scientific: 'D#4' },
+        { name: 'A#', scientific: 'A#4' }, { name: 'F', scientific: 'F4' }
+    ];
 
-<div class="main-container">
-    <div id="music-visualizer">
-        <svg id="circle-svg" viewBox="0 0 400 400">
-            <polygon id="shape-polygon"/>
-        </svg>
-    </div>
+    const shapes = {
+        '3': { name: 'Triángulo (Acorde Aumentado)' },
+        '4': { name: 'Cuadrado (Acorde Disminuido 7)' },
+        '5': { name: 'Pentágono (Escala Pentatónica)' },
+        '6': { name: 'Hexágono (Escala Tonos Enteros)' },
+        '7': { name: 'Heptágono (Escala Mayor/Menor)' }
+    };
 
-    <div class="controls">
-        <div class="control-group">
-            <label for="shape-selector">Forma Geométrica</label>
-            <select id="shape-selector">
-                <option value="3">Triángulo (Acorde Aumentado)</option>
-                <option value="4">Cuadrado (Acorde Disminuido 7)</option>
-                <option value="6">Hexágono (Escala Tonos Enteros)</option>
-            </select>
-        </div>
-        <div class="control-group">
-            <label>Rotación</label>
-            <div class="rotation-controls">
-                <button id="rotate-left">⟲</button>
-                <button id="rotate-right">⟳</button>
-            </div>
-        </div>
-        <button id="play-button">Tocar Selección</button>
-        <div id="info-display">
-            <h3>Notas Seleccionadas</h3>
-            <div id="selected-notes">C - E - G#</div>
-        </div>
-    </div>
-</div>
+    const centerX = 200, centerY = 200, radius = 170, noteRadius = 30;
+    let currentRotation = 0; // en pasos de nota (0-11)
+    let numVertices = 3; // Empezar con un triángulo
 
+    // --- FUNCIONES DE DIBUJO Y LÓGICA ---
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        // --- CONFIGURACIÓN INICIAL ---
-        const synth = new Tone.PolySynth(Tone.Synth).toDestination();
-        const svg = document.getElementById('circle-svg');
-        const shapePolygon = document.getElementById('shape-polygon');
-        const selectedNotesDiv = document.getElementById('selected-notes');
-        const shapeSelector = document.getElementById('shape-selector');
-        const rotateLeftBtn = document.getElementById('rotate-left');
-        const rotateRightBtn = document.getElementById('rotate-right');
-        const playButton = document.getElementById('play-button');
-
-        const notesInCircle = [ // Ordenado por círculo de quintas
-            { name: 'C', scientific: 'C4' }, { name: 'G', scientific: 'G4' },
-            { name: 'D', scientific: 'D4' }, { name: 'A', scientific: 'A4' },
-            { name: 'E', scientific: 'E4' }, { name: 'B', scientific: 'B4' },
-            { name: 'F#', scientific: 'F#4' }, { name: 'C#', scientific: 'C#4' },
-            { name: 'G#', scientific: 'G#4' }, { name: 'D#', scientific: 'D#4' },
-            { name: 'A#', scientific: 'A#4' }, { name: 'F', scientific: 'F4' }
-        ];
-
-        const centerX = 200, centerY = 200, radius = 170, noteRadius = 30;
-        let currentRotation = 0; // en pasos de nota (0-11)
-        let numVertices = 3; // Empezar con un triángulo
-
-        // --- FUNCIONES DE DIBUJO Y LÓGICA ---
-        function drawCircle() {
-            notesInCircle.forEach((note, i) => {
-                const angle = (i / 12) * 2 * Math.PI - (Math.PI / 2); // Empezar en la parte superior
-                const x = centerX + radius * Math.cos(angle);
-                const y = centerY + radius * Math.sin(angle);
-
-                // Círculo de la nota
-                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-                circle.setAttribute('id', `note-bg-${i}`);
-                circle.setAttribute('class', 'note-circle');
-                circle.setAttribute('cx', x);
-                circle.setAttribute('cy', y);
-                circle.setAttribute('r', noteRadius);
-                svg.appendChild(circle);
-
-                // Texto de la nota
-                const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-                text.setAttribute('class', 'note-text');
-                text.setAttribute('x', x);
-                text.setAttribute('y', y);
-                text.textContent = note.name;
-                svg.appendChild(text);
-            });
-            svg.appendChild(shapePolygon); // Asegurarse que la forma está encima
+    // Agregamos un bucle para generar las opciones del selector dinámicamente.
+    // Esto hace que el código sea más escalable si quieres añadir más formas.
+    function setupShapeSelector() {
+        for (const vertices in shapes) {
+            const option = document.createElement('option');
+            option.value = vertices;
+            option.textContent = shapes[vertices].name;
+            shapeSelector.appendChild(option);
         }
+    }
 
-        function updateSelectionAndShape() {
-            const points = [];
-            const selectedNotes = [];
+    function drawCircle() {
+        // ... (Tu función drawCircle es perfecta, no necesita cambios)
+        notesInCircle.forEach((note, i) => {
+            const angle = (i / 12) * 2 * Math.PI - (Math.PI / 2);
+            const x = centerX + radius * Math.cos(angle);
+            const y = centerY + radius * Math.sin(angle);
+
+            const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            circle.setAttribute('id', `note-bg-${i}`);
+            circle.setAttribute('class', 'note-circle');
+            circle.setAttribute('cx', x);
+            circle.setAttribute('cy', y);
+            circle.setAttribute('r', noteRadius);
+            svg.appendChild(circle);
+
+            const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            text.setAttribute('class', 'note-text');
+            text.setAttribute('x', x);
+            text.setAttribute('y', y);
+            text.textContent = note.name;
+            svg.appendChild(text);
+        });
+        svg.appendChild(shapePolygon);
+    }
+
+    function updateSelectionAndShape() {
+        const points = [];
+        const selectedNotes = [];
+        
+        // Limpiar selección previa
+        document.querySelectorAll('.note-circle.active').forEach(c => c.classList.remove('active'));
+
+        for (let i = 0; i < numVertices; i++) {
+            const step = 12 / numVertices;
+            const noteIndex = Math.round((currentRotation + i * step) % 12);
             
-            // Limpiar selección previa
-            document.querySelectorAll('.note-circle.active').forEach(c => c.classList.remove('active'));
-
-            for (let i = 0; i < numVertices; i++) {
-                const step = 12 / numVertices;
-                const noteIndex = (currentRotation + i * step) % 12;
+            // Asegurarse de que el índice sea válido
+            if (notesInCircle[noteIndex]) {
                 selectedNotes.push(notesInCircle[noteIndex]);
 
                 // Resaltar círculo de nota
@@ -230,40 +92,59 @@
                 const y = centerY + radius * Math.sin(angle);
                 points.push(`${x},${y}`);
             }
-            
-            shapePolygon.setAttribute('points', points.join(' '));
-            selectedNotesDiv.textContent = selectedNotes.map(n => n.name).join(' - ');
-
-            return selectedNotes.map(n => n.scientific);
         }
+        
+        shapePolygon.setAttribute('points', points.join(' '));
+        selectedNotesDiv.textContent = selectedNotes.map(n => n.name).join(' - ');
 
-        // --- EVENT LISTENERS ---
-        shapeSelector.addEventListener('change', (e) => {
-            numVertices = parseInt(e.target.value, 10);
-            updateSelectionAndShape();
-        });
+        return selectedNotes.map(n => n.scientific);
+    }
 
-        rotateLeftBtn.addEventListener('click', () => {
-            currentRotation = (currentRotation - 1 + 12) % 12;
-            updateSelectionAndShape();
-        });
-
-        rotateRightBtn.addEventListener('click', () => {
-            currentRotation = (currentRotation + 1) % 12;
-            updateSelectionAndShape();
-        });
-
-        playButton.addEventListener('click', async () => {
-            await Tone.start();
-            const notesToPlay = updateSelectionAndShape();
-            synth.triggerAttackRelease(notesToPlay, "1s");
-        });
-
-        // --- INICIALIZACIÓN ---
-        drawCircle();
+    // --- EVENT LISTENERS ---
+    shapeSelector.addEventListener('change', (e) => {
+        numVertices = parseInt(e.target.value, 10);
         updateSelectionAndShape();
     });
-</script>
 
-</body>
-</html>
+    rotateLeftBtn.addEventListener('click', () => {
+        currentRotation = (currentRotation - 1 + 12) % 12;
+        updateSelectionAndShape();
+    });
+
+    rotateRightBtn.addEventListener('click', () => {
+        currentRotation = (currentRotation + 1) % 12;
+        updateSelectionAndShape();
+    });
+
+    playButton.addEventListener('click', async () => {
+        await Tone.start();
+        const notesToPlay = updateSelectionAndShape();
+
+        // Toca las notas secuencialmente con un intervalo.
+        const sequence = new Tone.Sequence((time, note) => {
+            // Resalta la nota actual en el círculo mientras se reproduce.
+            const noteIndex = notesInCircle.findIndex(n => n.scientific === note);
+            document.querySelectorAll('.note-circle').forEach(c => c.classList.remove('active'));
+            if (document.getElementById(`note-bg-${noteIndex}`)) {
+                document.getElementById(`note-bg-${noteIndex}`).classList.add('active');
+            }
+            synth.triggerAttackRelease(note, "8n", time);
+        }, notesToPlay).start(0);
+
+        Tone.Transport.start();
+
+        // Detener la secuencia y limpiar las notas resaltadas después de 2 segundos.
+        setTimeout(() => {
+            sequence.stop();
+            Tone.Transport.stop();
+            document.querySelectorAll('.note-circle').forEach(c => c.classList.remove('active'));
+            // Vuelve a resaltar las notas de la forma al final de la reproducción.
+            updateSelectionAndShape(); 
+        }, notesToPlay.length * 500); // 500 ms por nota
+    });
+
+    // --- INICIALIZACIÓN ---
+    drawCircle();
+    setupShapeSelector(); // Llamar a la función para generar las opciones
+    updateSelectionAndShape();
+});
