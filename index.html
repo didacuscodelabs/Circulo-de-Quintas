@@ -6,155 +6,143 @@
 <script src="https://cdn.jsdelivr.net/npm/tone@14.8.41/build/Tone.js"></script>
 <style>
 body {
-    margin:0; display:flex; flex-direction:column; align-items:center;
-    justify-content:center; height:100vh;
-    background:#fafafa; font-family:'Helvetica Neue',sans-serif; color:#111;
+  margin:0; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; height:100vh; background:#f5f5f5;
+  font-family:'Helvetica Neue',sans-serif; color:#111;
 }
-h1 { font-weight:200; font-size:2em; margin-bottom:10px; color:#222; }
-svg { width:90vw; max-width:400px; height:90vw; background:#fff; border-radius:50%; }
-.note-circle { fill:#e0e0e0; stroke:#aaa; stroke-width:1.5; transition: transform 0.3s, fill 0.3s; }
-.note-circle.active { transform: scale(1.3); fill:#0096ff; }
-.note-text { font-size:12px; text-anchor:middle; dominant-baseline:middle; fill:#333; font-weight:400; }
-polygon { fill:rgba(0,150,255,0.1); stroke:#0096ff; stroke-width:2; transition: all 0.3s ease; }
-#controls { margin-top:15px; display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
-select, button { padding:8px 12px; border-radius:6px; border:none; cursor:pointer; font-size:1em; }
-button:hover, select:hover { background:#0096ff; color:#fff; }
-#selected-notes { margin-top:10px; font-size:1em; font-weight:500; color:#222; }
+h1 { font-weight:200; font-size:2em; margin-bottom:20px; color:#222; }
+svg { width:80vw; max-width:500px; height:80vw; background:#fff; border-radius:50%; box-shadow:0 0 20px rgba(0,0,0,0.05);}
+.note-circle { fill:#e0e0e0; stroke:#aaa; stroke-width:1.5; transition: all 0.3s; }
+.note-circle.active { fill:#6c5ce7; stroke:#4b4b7f; transform:scale(1.3); }
+polygon { fill:rgba(108,92,231,0.15); stroke:#6c5ce7; stroke-width:2; transition: all 0.3s ease; }
+#controls { margin-top:20px; display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+select, button { padding:10px 16px; border-radius:6px; border:none; cursor:pointer; font-size:1em; background:#fff; box-shadow:0 2px 6px rgba(0,0,0,0.05); }
+select:hover, button:hover { background:#6c5ce7; color:#fff; }
+#info { margin-top:10px; font-size:1em; color:#555; }
 </style>
 </head>
 <body>
 
 <h1>Melodías Geométricas</h1>
 <svg id="circle-svg" viewBox="0 0 400 400">
-    <polygon id="shape-polygon"/>
+  <polygon id="shape-polygon"/>
 </svg>
 
 <div id="controls">
-<select id="shape-selector"></select>
-<button id="rotate-left">⟲ Rotar</button>
-<button id="rotate-right">⟳ Rotar</button>
-<button id="play-button">▶ Iniciar</button>
-<button id="stop-button">■ Detener</button>
+  <select id="shape-selector"></select>
+  <select id="technique-selector">
+    <option value="arpegio">Arpegio</option>
+    <option value="acorde">Acorde</option>
+    <option value="secuencia">Secuencia Rotativa</option>
+  </select>
+  <button id="play-button">▶ Iniciar</button>
+  <button id="stop-button">■ Detener</button>
+  <button id="rotate-left">⟲ Rotar</button>
+  <button id="rotate-right">⟳ Rotar</button>
 </div>
-<div id="selected-notes"></div>
+
+<div id="info">Notas activas</div>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    const synth = new Tone.PolySynth(Tone.Synth).toDestination();
-    const svg = document.getElementById('circle-svg');
-    const shapePolygon = document.getElementById('shape-polygon');
-    const selectedNotesDiv = document.getElementById('selected-notes');
-    const shapeSelector = document.getElementById('shape-selector');
-    const rotateLeftBtn = document.getElementById('rotate-left');
-    const rotateRightBtn = document.getElementById('rotate-right');
-    const playButton = document.getElementById('play-button');
-    const stopButton = document.getElementById('stop-button');
+  const synth = new Tone.PolySynth(Tone.Synth).toDestination();
+  const svg = document.getElementById('circle-svg');
+  const shapePolygon = document.getElementById('shape-polygon');
+  const selectedNotesDiv = document.getElementById('info');
+  const shapeSelector = document.getElementById('shape-selector');
+  const techniqueSelector = document.getElementById('technique-selector');
+  const rotateLeftBtn = document.getElementById('rotate-left');
+  const rotateRightBtn = document.getElementById('rotate-right');
+  const playButton = document.getElementById('play-button');
+  const stopButton = document.getElementById('stop-button');
 
-    const notesInCircle = [
-        { name: 'C', scientific: 'C4' }, { name: 'G', scientific: 'G4' },
-        { name: 'D', scientific: 'D4' }, { name: 'A', scientific: 'A4' },
-        { name: 'E', scientific: 'E4' }, { name: 'B', scientific: 'B4' },
-        { name: 'F#', scientific: 'F#4' }, { name: 'C#', scientific: 'C#4' },
-        { name: 'G#', scientific: 'G#4' }, { name: 'D#', scientific: 'D#4' },
-        { name: 'A#', scientific: 'A#4' }, { name: 'F', scientific: 'F4' }
-    ];
+  const notes = [
+    { name:'C', scientific:'C4'}, { name:'G', scientific:'G4'},
+    { name:'D', scientific:'D4'}, { name:'A', scientific:'A4'},
+    { name:'E', scientific:'E4'}, { name:'B', scientific:'B4'},
+    { name:'F#', scientific:'F#4'}, { name:'C#', scientific:'C#4'},
+    { name:'G#', scientific:'G#4'}, { name:'D#', scientific:'D#4'},
+    { name:'A#', scientific:'A#4'}, { name:'F', scientific:'F4'}
+  ];
 
-    const shapes = {3:'Triángulo',4:'Cuadrado',5:'Pentágono',6:'Hexágono',7:'Heptágono'};
+  const shapes = {3:'Triángulo',4:'Cuadrado',5:'Pentágono',6:'Hexágono',7:'Heptágono',8:'Estrella'};
+  const centerX=200, centerY=200, radius=150, noteRadius=20;
+  let currentRotation=0, numVertices=3, isPlaying=false, intervalId;
 
-    const centerX=200, centerY=200, radius=150, noteRadius=20;
-    let currentRotation=0, numVertices=3, isPlaying=false, intervalId;
-
-    function setupShapeSelector(){
-        for(const v in shapes){
-            const opt=document.createElement('option');
-            opt.value=v; opt.textContent=shapes[v];
-            shapeSelector.appendChild(opt);
-        }
+  function setupShapeSelector(){
+    for(const v in shapes){
+      const opt=document.createElement('option');
+      opt.value=v; opt.textContent=shapes[v];
+      shapeSelector.appendChild(opt);
     }
+  }
 
-    function drawCircle(){
-        notesInCircle.forEach((note,i)=>{
-            const angle=(i/12)*2*Math.PI-Math.PI/2;
-            const x=centerX+radius*Math.cos(angle);
-            const y=centerY+radius*Math.sin(angle);
-
-            const circle=document.createElementNS("http://www.w3.org/2000/svg","circle");
-            circle.setAttribute('id',`note-bg-${i}`);
-            circle.setAttribute('class','note-circle');
-            circle.setAttribute('cx',x);
-            circle.setAttribute('cy',y);
-            circle.setAttribute('r',noteRadius);
-            svg.appendChild(circle);
-
-            const text=document.createElementNS("http://www.w3.org/2000/svg","text");
-            text.setAttribute('class','note-text');
-            text.setAttribute('x',x);
-            text.setAttribute('y',y);
-            text.textContent=note.name;
-            svg.appendChild(text);
-        });
-        svg.appendChild(shapePolygon);
-    }
-
-    function updateSelectionAndShape(){
-        const points=[]; const selectedNotes=[];
-        document.querySelectorAll('.note-circle.active').forEach(c=>c.classList.remove('active'));
-
-        for(let i=0;i<numVertices;i++){
-            const step=12/numVertices;
-            const idx=Math.round((currentRotation+i*step)%12);
-            const note=notesInCircle[idx];
-            selectedNotes.push(note);
-            const circle=document.getElementById(`note-bg-${idx}`);
-            if(circle) circle.classList.add('active');
-
-            const angle=(idx/12)*2*Math.PI-Math.PI/2;
-            const x=centerX+radius*Math.cos(angle);
-            const y=centerY+radius*Math.sin(angle);
-            points.push(`${x},${y}`);
-        }
-        shapePolygon.setAttribute('points',points.join(' '));
-        selectedNotesDiv.textContent=selectedNotes.map(n=>n.name).join(' - ');
-
-        return selectedNotes.map(n=>n.scientific);
-    }
-
-    function rotateAuto(){
-        currentRotation=(currentRotation+1)%12;
-        updateSelectionAndShape();
-    }
-
-    function playMelody(){
-        if(isPlaying) return;
-        isPlaying=true;
-        Tone.start();
-        intervalId=setInterval(()=>{
-            const notes=updateSelectionAndShape();
-            notes.forEach((note,i)=>{
-                setTimeout(()=>synth.triggerAttackRelease(note,"8n"), i*300);
-            });
-            rotateAuto();
-        }, 1000);
-    }
-
-    function stopMelody(){
-        isPlaying=false;
-        clearInterval(intervalId);
-    }
-
-    shapeSelector.addEventListener('change',e=>{
-        numVertices=parseInt(e.target.value,10);
-        updateSelectionAndShape();
+  function drawCircle(){
+    notes.forEach((note,i)=>{
+      const angle=(i/12)*2*Math.PI-Math.PI/2;
+      const x=centerX+radius*Math.cos(angle);
+      const y=centerY+radius*Math.sin(angle);
+      const circle=document.createElementNS("http://www.w3.org/2000/svg","circle");
+      circle.setAttribute('id',`note-${i}`);
+      circle.setAttribute('class','note-circle');
+      circle.setAttribute('cx',x); circle.setAttribute('cy',y); circle.setAttribute('r',noteRadius);
+      svg.appendChild(circle);
     });
+    svg.appendChild(shapePolygon);
+  }
 
-    rotateLeftBtn.addEventListener('click',()=>{ currentRotation=(currentRotation-1+12)%12; updateSelectionAndShape(); });
-    rotateRightBtn.addEventListener('click',()=>{ currentRotation=(currentRotation+1)%12; updateSelectionAndShape(); });
-    playButton.addEventListener('click',playMelody);
-    stopButton.addEventListener('click',stopMelody);
+  function updateShape(){
+    const points=[], selected=[];
+    document.querySelectorAll('.note-circle.active').forEach(c=>c.classList.remove('active'));
+    for(let i=0;i<numVertices;i++){
+      const step=12/numVertices;
+      const idx=Math.round((currentRotation+i*step)%12);
+      const note=notes[idx];
+      selected.push(note);
+      document.getElementById(`note-${idx}`).classList.add('active');
+      const angle=(idx/12)*2*Math.PI-Math.PI/2;
+      const x=centerX+radius*Math.cos(angle);
+      const y=centerY+radius*Math.sin(angle);
+      points.push(`${x},${y}`);
+    }
+    shapePolygon.setAttribute('points',points.join(' '));
+    selectedNotesDiv.textContent=selected.map(n=>n.name).join(' - ');
+    return selected.map(n=>n.scientific);
+  }
 
-    drawCircle();
-    setupShapeSelector();
-    updateSelectionAndShape();
+  function rotateAuto(){ currentRotation=(currentRotation+1)%12; updateShape(); }
+
+  function playMelody(){
+    if(isPlaying) return;
+    isPlaying=true; Tone.start();
+    intervalId=setInterval(()=>{
+      const notesToPlay=updateShape();
+      const technique=techniqueSelector.value;
+
+      if(technique==='arpegio'){
+        notesToPlay.forEach((note,i)=>{
+          setTimeout(()=>synth.triggerAttackRelease(note,'8n'), i*300);
+        });
+      } else if(technique==='acorde'){
+        synth.triggerAttackRelease(notesToPlay,'4n');
+      } else { // secuencia rotativa
+        notesToPlay.forEach(note=>{
+          synth.triggerAttackRelease(note,'8n');
+        });
+      }
+      rotateAuto();
+    }, 1000);
+  }
+
+  function stopMelody(){ isPlaying=false; clearInterval(intervalId); }
+
+  shapeSelector.addEventListener('change',e=>{ numVertices=parseInt(e.target.value,10); updateShape(); });
+  rotateLeftBtn.addEventListener('click',()=>{ currentRotation=(currentRotation-1+12)%12; updateShape(); });
+  rotateRightBtn.addEventListener('click',()=>{ currentRotation=(currentRotation+1)%12; updateShape(); });
+  playButton.addEventListener('click',playMelody);
+  stopButton.addEventListener('click',stopMelody);
+
+  drawCircle(); setupShapeSelector(); updateShape();
 });
 </script>
 </body>
