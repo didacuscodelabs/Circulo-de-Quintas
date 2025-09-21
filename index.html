@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Tonos - Círculo de Quintas</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            margin: 0;
+        }
+        .circle-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            border: 2px solid #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .note {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2em;
+            cursor: pointer;
+            user-select: none;
+            transition: background-color 0.2s;
+        }
+        .note:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+
+<div class="circle-container">
+    <div class="note" id="C4">C</div>
+    <div class="note" id="G4">G</div>
+    <div class="note" id="D4">D</div>
+    <div class="note" id="A4">A</div>
+    <div class="note" id="E4">E</div>
+    <div class="note" id="B4">B</div>
+    <div class="note" id="Fsharp4">F#</div>
+    <div class="note" id="Csharp4">C#</div>
+    <div class="note" id="Gsharp4">G#</div>
+    <div class="note" id="Dsharp4">D#</div>
+    <div class="note" id="Asharp4">A#</div>
+    <div class="note" id="F4">F</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+<script>
+    const synth = new Tone.Synth().toDestination();
+
+    const notes = {
+        "C4": 261.63,
+        "G4": 392.00,
+        "D4": 293.66,
+        "A4": 440.00,
+        "E4": 329.63,
+        "B4": 493.88,
+        "Fsharp4": 369.99,
+        "Csharp4": 277.18,
+        "Gsharp4": 415.30,
+        "Dsharp4": 311.13,
+        "Asharp4": 466.16,
+        "F4": 349.23
+    };
+
+    const circle = document.querySelector('.circle-container');
+    const noteElements = document.querySelectorAll('.note');
+    const radius = 120; // Radio del círculo
+
+    noteElements.forEach((noteEl, index) => {
+        const angle = (index / noteElements.length) * 2 * Math.PI - (Math.PI / 2);
+        const x = Math.cos(angle) * radius;
+        const y = Math.sin(angle) * radius;
+        noteEl.style.transform = `translate(${x}px, ${y}px)`;
+
+        noteEl.addEventListener('click', () => {
+            const noteName = noteEl.id;
+            synth.triggerAttackRelease(notes[noteName], "8n");
+        });
+    });
+</script>
+
+</body>
+</html>
