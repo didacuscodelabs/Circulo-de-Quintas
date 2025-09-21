@@ -2,9 +2,13 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Círculo de Quintas Geométrico</title>
+<title>Laboratorio Sonoro Geométrico</title>
 <script src="https://cdn.jsdelivr.net/npm/tone@14.8.41/build/Tone.js"></script>
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400&display=swap');
+    :root {
+        --glow-color: #a29bfe;
+    }
     body {
         margin: 0;
         background: #0a0f1a;
@@ -16,297 +20,429 @@
         font-family: 'Inter', sans-serif;
         color: #e0e0e0;
         text-align: center;
+        overflow: hidden;
+        background-image: radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 40px),
+                          radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 30px),
+                          radial-gradient(white, rgba(255,255,255,.1) 2px, transparent 40px),
+                          radial-gradient(rgba(255,255,255,.4), rgba(255,255,255,.1) 2px, transparent 30px);
+        background-size: 550px 550px, 350px 350px, 250px 250px, 150px 150px;
+        background-position: 0 0, 40px 60px, 130px 270px, 70px 100px;
+        animation: star-move 240s linear infinite;
     }
-    h1 {
-        font-weight: 300;
-        letter-spacing: 2px;
-        margin-bottom: 20px;
+    @keyframes star-move {
+        from {background-position: 0 0, 40px 60px, 130px 270px, 70px 100px;}
+        to {background-position: -10000px 5000px, -10040px 5060px, -10130px 5270px, -10070px 5100px;}
     }
+    #main-container {
+        backdrop-filter: blur(5px);
+        background: rgba(10, 15, 26, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 2vw;
+        box-shadow: 0 0 50px rgba(0,0,0,0.5);
+    }
+    h1 { font-weight: 300; letter-spacing: 2px; margin: 0 0 20px 0; }
     svg {
-        width: 80vw;
-        max-width: 500px;
+        width: 40vw;
+        max-width: 450px;
         height: auto;
         aspect-ratio: 1 / 1;
+        animation: cosmic-rotation 180s linear infinite;
     }
-    .circle-point {
-        fill: #333;
-        transition: all 0.1s ease-in-out;
+    @keyframes cosmic-rotation { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .circle-point { fill: #333; transition: all 0.1s ease-in-out; }
+    .circle-point.active { fill: var(--glow-color); r: 12; filter: drop-shadow(0 0 10px var(--glow-color)) drop-shadow(0 0 20px var(--glow-color)); }
+    line { stroke: var(--glow-color); stroke-width: 1.5; opacity: 0; transition: all 0.2s ease-in-out; }
+    line.visible { opacity: 0.2; }
+    line.active { opacity: 1; stroke: #fff; filter: drop-shadow(0 0 8px var(--glow-color)); }
+    #note-label {
+        font-size: 24px;
+        fill: #fff;
+        text-anchor: middle;
+        dominant-baseline: middle;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.2s;
+        filter: drop-shadow(0 0 5px #000);
     }
-    .circle-point.active {
-        fill: #a29bfe;
-        r: 12;
-        filter: drop-shadow(0 0 8px #a29bfe);
-    }
-    line {
-        stroke: #6c5ce7;
-        stroke-width: 1.5;
-        opacity: 0; /* Inicia invisible */
-        transition: all 0.2s ease-in-out;
-    }
-    line.visible {
-        opacity: 0.2;
-    }
-    line.active {
-        opacity: 1;
-        stroke: #fdfdfd;
-        filter: drop-shadow(0 0 5px #a29bfe);
-    }
-    #controls {
-        margin-top: 30px;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 15px;
-        justify-content: center;
-        align-items: center;
-    }
-    .control-group {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 5px;
-    }
-    label {
-        font-size: 0.8em;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        color: #888;
-    }
+    #note-label.visible { opacity: 1; }
+    #controls { margin-top: 30px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+    .control-group { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    label { font-size: 0.7em; text-transform: uppercase; letter-spacing: 1px; color: #888; }
     button, select {
-        padding: 10px 20px;
-        border: 1px solid #333;
-        border-radius: 8px;
-        background: #1a1f2c;
-        color: #e0e0e0;
-        cursor: pointer;
-        font-size: 1em;
-        transition: all 0.2s;
+        padding: 10px; border: 1px solid #333; border-radius: 8px;
+        background: #1a1f2c; color: #e0e0e0; cursor: pointer; font-size: 0.9em; transition: all 0.2s; width: 100%;
     }
-    button:hover, select:hover {
-        background: #6c5ce7;
-        border-color: #6c5ce7;
-    }
-    #play.playing {
-        background: #d63031;
-    }
+    button:hover, select:hover { background: var(--glow-color); border-color: var(--glow-color); color: #0a0f1a; }
+    .full-span { grid-column: 1 / -1; }
+    .bpm-control { display: flex; align-items: center; gap: 10px; width: 100%; }
+    #bpm-slider { flex-grow: 1; }
+    #bpm-value { font-variant-numeric: tabular-nums; }
+    .octave-control { display: flex; gap: 5px; }
+    #play.playing { background: #d63031; }
 </style>
 </head>
 <body>
 
-<h1>Círculo Místico Musical</h1>
-<svg id="circle-svg" viewBox="0 0 400 400"></svg>
-<div id="controls">
-    <div class="control-group">
-        <label for="shape-select">Forma</label>
-        <select id="shape-select">
-            <option value="3">Triángulo</option>
-            <option value="4">Cuadrado</option>
-            <option value="5">Pentágono</option>
-            <option value="6">Hexágono</option>
-            <option value="12" selected>Círculo (Melodía)</option>
-        </select>
+<div id="main-container">
+    <h1>Laboratorio Sonoro</h1>
+    <svg id="circle-svg" viewBox="0 0 400 400">
+        <g id="lines-group"></g>
+        <g id="points-group"></g>
+        <text id="note-label" x="-100" y="-100"></text>
+    </svg>
+    <div id="controls">
+        <div class="control-group">
+            <label for="shape-select">Forma Geométrica</label>
+            <select id="shape-select">
+                <option value="circle_12">Círculo Completo</option>
+                <option value="tri_aug">Triángulo (Aum)</option>
+                <option value="sqr_dim">Cuadrado (Dis)</option>
+                <option value="penta_5">Pentágono</option>
+                <option value="hexa_6">Hexágono</option>
+                <option value="hepta_7">Heptágono</option>
+                <option value="octa_8">Octágono</option>
+                <option value="star_7_2">Heptagrama</option>
+                <option value="star_8_3">Octagrama</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <label for="mode-select">Modo de Sonido</label>
+            <select id="mode-select">
+                <option value="melody">Melodía Divina</option>
+                <option value="arpeggio">Arpegio</option>
+                <option value="triad">Acorde (Triada)</option>
+                <option value="seventh">Acorde (Séptima)</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <label for="sound-palette-select">Paleta Sonora</label>
+            <select id="sound-palette-select">
+                <option value="celestial">Celestial</option>
+                <option value="psychedelic">Psicodélico</option>
+                <option value="mystic">Abismo Místico</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <label for="scale-select">Escala Musical</label>
+            <select id="scale-select">
+                <option value="major">Mayor</option>
+                <option value="minor">Menor</option>
+                <option value="dorian">Dórico</option>
+                <option value="phrygian">Frigio</option>
+                <option value="lydian">Lidio</option>
+                <option value="pentatonic">Pentatónica</option>
+                <option value="wholetone">Tono Entero</option>
+            </select>
+        </div>
+        <div class="control-group">
+             <label>Octava</label>
+             <div class="octave-control">
+                <button id="octave-down">-</button>
+                <span id="octave-value">4</span>
+                <button id="octave-up">+</button>
+             </div>
+        </div>
+        <div class="control-group">
+            <button id="play">▶ Iniciar</button>
+        </div>
+        <div class="control-group full-span">
+            <label for="bpm-slider">Tempo</label>
+            <div class="bpm-control">
+                <span>60</span>
+                <input type="range" id="bpm-slider" min="60" max="180" value="90">
+                <span>180</span>
+                <span id="bpm-value">90 BPM</span>
+            </div>
+        </div>
     </div>
-    <div class="control-group">
-        <label for="mode-select">Sonido</label>
-        <select id="mode-select">
-            <option value="melody">Melodía Divina</option>
-            <option value="arpeggio">Arpegio</option>
-            <option value="triad">Acorde (Triada)</option>
-            <option value="seventh">Acorde (Séptima)</option>
-        </select>
-    </div>
-    <button id="play">▶ Iniciar</button>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    // --- CONFIGURACIÓN INICIAL ---
-    const svg = document.getElementById('circle-svg');
-    const playBtn = document.getElementById('play');
-    const shapeSelect = document.getElementById('shape-select');
-    const modeSelect = document.getElementById('mode-select');
 
-    const centerX = 200, centerY = 200, radius = 170, numPoints = 12;
-    let points = [], lines = new Map(); // Usamos un Map para fácil acceso a las líneas
-    let activeShapeIndices = [];
+    const MusicalCircle = {
+        // --- PROPIEDADES ---
+        state: {
+            isPlaying: false,
+            octave: 4,
+            bpm: 90,
+            shape: 'circle_12',
+            mode: 'melody',
+            sound: 'celestial',
+            scale: 'major',
+        },
+        dom: {},
+        svg: {
+            centerX: 200, centerY: 200, radius: 170, numPoints: 12,
+            points: [], lines: new Map(), activeShapeIndices: []
+        },
+        audio: {
+            synths: {},
+            activeSynth: null,
+            sequence: null,
+            isInitialized: false,
+            // Círculo de quintas
+            CIRCLE_OF_FIFTHS: ['C', 'G', 'D', 'A', 'E', 'B', 'F#', 'Db', 'Ab', 'Eb', 'Bb', 'F'],
+            // Intervalos de las escalas desde la raíz (en semitonos)
+            SCALES: {
+                major: [0, 2, 4, 5, 7, 9, 11],
+                minor: [0, 2, 3, 5, 7, 8, 10],
+                dorian: [0, 2, 3, 5, 7, 9, 10],
+                phrygian: [0, 1, 3, 5, 7, 8, 10],
+                lydian: [0, 2, 4, 6, 7, 9, 11],
+                pentatonic: [0, 2, 4, 7, 9],
+                wholetone: [0, 2, 4, 6, 8, 10]
+            }
+        },
 
-    // --- TEORÍA MUSICAL ---
-    // Círculo de quintas real, partiendo de C
-    const CIRCLE_OF_FIFTHS = ['C', 'G', 'D', 'A', 'E', 'B', 'F#', 'Db', 'Ab', 'Eb', 'Bb', 'F'];
-    const OCTAVE = 4;
+        // --- MÉTODO DE INICIALIZACIÓN PRINCIPAL ---
+        init() {
+            this.collectDomElements();
+            this.initSVG();
+            this.initAudio();
+            this.bindUIEvents();
+            this.updateShape();
+            this.updateUI();
+        },
 
-    // --- MOTOR DE AUDIO (TONE.JS) ---
-    // Sonido más etéreo y celestial usando FMSynth con efectos
-    const reverb = new Tone.Reverb({ decay: 8, wet: 0.5 }).toDestination();
-    const delay = new Tone.FeedbackDelay("8n", 0.4).connect(reverb);
-    const synth = new Tone.PolySynth(Tone.FMSynth, {
-        harmonicity: 3.01,
-        modulationIndex: 14,
-        envelope: { attack: 0.01, decay: 0.3, sustain: 0.4, release: 2 }
-    }).connect(delay);
-    
-    Tone.Transport.bpm.value = 90;
+        // --- CONFIGURACIÓN ---
+        collectDomElements() {
+            this.dom.svg = document.getElementById('circle-svg');
+            this.dom.linesGroup = document.getElementById('lines-group');
+            this.dom.pointsGroup = document.getElementById('points-group');
+            this.dom.noteLabel = document.getElementById('note-label');
+            this.dom.playBtn = document.getElementById('play');
+            this.dom.shapeSelect = document.getElementById('shape-select');
+            this.dom.modeSelect = document.getElementById('mode-select');
+            this.dom.soundSelect = document.getElementById('sound-palette-select');
+            this.dom.scaleSelect = document.getElementById('scale-select');
+            this.dom.octaveUp = document.getElementById('octave-up');
+            this.dom.octaveDown = document.getElementById('octave-down');
+            this.dom.octaveValue = document.getElementById('octave-value');
+            this.dom.bpmSlider = document.getElementById('bpm-slider');
+            this.dom.bpmValue = document.getElementById('bpm-value');
+        },
 
-    // --- DIBUJO DEL SVG ---
-    // Crear los 12 puntos base del círculo
-    for (let i = 0; i < numPoints; i++) {
-        const angle = (i / numPoints) * 2 * Math.PI - Math.PI / 2; // Empezar desde arriba
-        const x = centerX + radius * Math.cos(angle);
-        const y = centerY + radius * Math.sin(angle);
-        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-        circle.setAttribute('cx', x);
-        circle.setAttribute('cy', y);
-        circle.setAttribute('r', 8);
-        circle.setAttribute('class', 'circle-point');
-        svg.appendChild(circle);
-        points.push({ x, y, el: circle, note: CIRCLE_OF_FIFTHS[i] });
-    }
-
-    // Crear todas las líneas posibles y guardarlas en un Map para fácil acceso
-    for (let i = 0; i < numPoints; i++) {
-        for (let j = i + 1; j < numPoints; j++) {
-            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-            line.setAttribute('x1', points[i].x);
-            line.setAttribute('y1', points[i].y);
-            line.setAttribute('x2', points[j].x);
-            line.setAttribute('y2', points[j].y);
-            svg.insertBefore(line, svg.firstChild); // Insertar líneas detrás de los puntos
-            lines.set(`${i}-${j}`, line);
-        }
-    }
-
-    // --- LÓGICA DE FORMAS Y VISUALIZACIÓN ---
-    function updateShape() {
-        const sides = parseInt(shapeSelect.value);
-        activeShapeIndices = [];
-        
-        // Ocultar todas las líneas
-        lines.forEach(line => line.classList.remove('visible'));
-
-        if (sides === 12) { // Caso especial para el círculo completo (melodía)
-             for(let i=0; i < 12; i++) activeShapeIndices.push(i);
-        } else {
-            const step = numPoints / sides;
-            for (let i = 0; i < sides; i++) {
-                const p1_index = Math.round(i * step) % numPoints;
-                const p2_index = Math.round((i + 1) * step) % numPoints;
-                activeShapeIndices.push(p1_index);
-
-                // Normalizar índices para buscar en el Map
-                const key = [p1_index, p2_index].sort((a, b) => a - b).join('-');
-                const line = lines.get(key);
-                if (line) {
-                    line.classList.add('visible');
+        initSVG() {
+            for (let i = 0; i < this.svg.numPoints; i++) {
+                const angle = (i / this.svg.numPoints) * 2 * Math.PI - Math.PI / 2;
+                const x = this.svg.centerX + this.svg.radius * Math.cos(angle);
+                const y = this.svg.centerY + this.svg.radius * Math.sin(angle);
+                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                circle.setAttribute('cx', x); circle.setAttribute('cy', y);
+                circle.setAttribute('r', 8); circle.setAttribute('class', 'circle-point');
+                this.dom.pointsGroup.appendChild(circle);
+                this.svg.points.push({ x, y, el: circle, note: this.audio.CIRCLE_OF_FIFTHS[i] });
+            }
+            for (let i = 0; i < this.svg.numPoints; i++) {
+                for (let j = i + 1; j < this.svg.numPoints; j++) {
+                    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                    line.setAttribute('x1', this.svg.points[i].x); line.setAttribute('y1', this.svg.points[i].y);
+                    line.setAttribute('x2', this.svg.points[j].x); line.setAttribute('y2', this.svg.points[j].y);
+                    this.dom.linesGroup.appendChild(line);
+                    this.svg.lines.set(`${i}-${j}`, line);
                 }
             }
-        }
-    }
-    
-    // --- LÓGICA PRINCIPAL DE REPRODUCCIÓN ---
-    let sequence;
+        },
 
-    function createSequence() {
-        if (sequence) {
-            sequence.dispose(); // Limpiar secuencia anterior
-        }
-        
-        // Creamos una secuencia que se repite por cada nodo de la forma activa
-        sequence = new Tone.Sequence((time, stepIndex) => {
-            const pointIndex = activeShapeIndices[stepIndex];
-            const point = points[pointIndex];
-            const note = point.note + OCTAVE;
+        initAudio() {
+            const reverb = new Tone.Reverb({ decay: 8, wet: 0.6 }).toDestination();
+            
+            this.audio.synths.celestial = new Tone.PolySynth(Tone.FMSynth, {
+                harmonicity: 3.01, modulationIndex: 14,
+                envelope: { attack: 0.01, decay: 0.3, sustain: 0.4, release: 2 }
+            }).connect(new Tone.FeedbackDelay("8n", 0.4).connect(reverb));
+            
+            const phaser = new Tone.Phaser({ frequency: 0.5, octaves: 3, baseFrequency: 350 });
+            const autoFilter = new Tone.AutoFilter("4n").start();
+            this.audio.synths.psychedelic = new Tone.PolySynth(Tone.AMSynth, {
+                envelope: { attack: 0.01, decay: 0.5, sustain: 0.3, release: 1.5 }
+            }).connect(phaser).connect(autoFilter).connect(new Tone.PingPongDelay("4n", 0.3).connect(reverb));
+            
+            this.audio.synths.mystic = new Tone.PolySynth(Tone.DuoSynth, {
+                vibratoAmount: 0.5, harmonicity: 1.5,
+                voice0: { volume: -10, portamento: 0, oscillator: { type: "sine" } },
+                voice1: { volume: -10, portamento: 0, oscillator: { type: "square" } }
+            }).connect(new Tone.Chorus(4, 2.5, 0.5)).connect(reverb);
+            
+            this.audio.activeSynth = this.audio.synths[this.state.sound];
+            Tone.Transport.bpm.value = this.state.bpm;
+        },
 
-            // Lógica para cada modo de sonido
-            const mode = modeSelect.value;
-            switch (mode) {
-                case 'melody':
-                    // Genera una melodía "divina" usando la escala pentatónica
-                    const pentatonic = [0, 2, 4, 7, 9]; // Intervalos de la pentatónica mayor
-                    const baseFreq = Tone.Frequency(note);
-                    const melodyNotes = [
-                        note,
-                        baseFreq.transpose(pentatonic[Math.floor(Math.random() * 5)]).toNote(),
-                        baseFreq.transpose(pentatonic[Math.floor(Math.random() * 5)] + 12).toNote()
-                    ];
-                    synth.triggerAttackRelease(melodyNotes[0], "8n", time);
-                    synth.triggerAttackRelease(melodyNotes[1], "16n", time + Tone.Time("16n").toSeconds());
-                    synth.triggerAttackRelease(melodyNotes[2], "16n", time + Tone.Time("8n").toSeconds());
-                    break;
-                case 'arpeggio':
-                    const arpeggioNotes = [note, Tone.Frequency(note).transpose(4).toNote(), Tone.Frequency(note).transpose(7).toNote()];
-                    const arpeggioPattern = new Tone.Pattern((time, n) => {
-                        synth.triggerAttackRelease(n, '16n', time);
-                    }, arpeggioNotes, 'up').start(time);
-                    arpeggioPattern.stop(time + Tone.Time('4n').toSeconds());
-                    break;
-                case 'triad':
-                    const triadNotes = [note, Tone.Frequency(note).transpose(4).toNote(), Tone.Frequency(note).transpose(7).toNote()];
-                    synth.triggerAttackRelease(triadNotes, "4n", time);
-                    break;
-                case 'seventh':
-                    const seventhNotes = [note, Tone.Frequency(note).transpose(4).toNote(), Tone.Frequency(note).transpose(7).toNote(), Tone.Frequency(note).transpose(11).toNote()];
-                    synth.triggerAttackRelease(seventhNotes, "4n", time);
-                    break;
+        bindUIEvents() {
+            this.dom.playBtn.addEventListener('click', () => this.togglePlayback());
+            this.dom.shapeSelect.addEventListener('change', (e) => this.updateState({ shape: e.target.value }));
+            this.dom.modeSelect.addEventListener('change', (e) => this.updateState({ mode: e.target.value }));
+            this.dom.soundSelect.addEventListener('change', (e) => this.updateState({ sound: e.target.value }));
+            this.dom.scaleSelect.addEventListener('change', (e) => this.updateState({ scale: e.target.value }));
+            this.dom.octaveUp.addEventListener('click', () => this.updateState({ octave: Math.min(6, this.state.octave + 1) }));
+            this.dom.octaveDown.addEventListener('click', () => this.updateState({ octave: Math.max(1, this.state.octave - 1) }));
+            this.dom.bpmSlider.addEventListener('input', (e) => this.updateState({ bpm: parseInt(e.target.value) }));
+        },
+
+        // --- LÓGICA DE ACTUALIZACIÓN ---
+        updateState(newState) {
+            Object.assign(this.state, newState);
+            
+            if (newState.sound) {
+                this.audio.activeSynth = this.audio.synths[this.state.sound];
+            }
+            if (newState.bpm) {
+                Tone.Transport.bpm.value = this.state.bpm;
+            }
+            if (newState.shape) {
+                this.updateShape();
             }
 
-            // Actualización visual sincronizada con el audio
-            Tone.Draw.schedule(() => {
-                // Apagar todos los puntos y líneas activas
-                points.forEach(p => p.el.classList.remove('active'));
-                svg.querySelectorAll('line.active').forEach(l => l.classList.remove('active'));
+            this.updateUI();
 
-                // Encender el punto actual
-                point.el.classList.add('active');
+            if (this.state.isPlaying) {
+                this.createSequence();
+            }
+        },
 
-                // Encender las líneas conectadas al punto actual dentro de la forma
-                const sides = parseInt(shapeSelect.value);
-                const step = numPoints / sides;
-                const prevIndexInShape = (stepIndex - 1 + activeShapeIndices.length) % activeShapeIndices.length;
-                const nextIndexInShape = (stepIndex + 1) % activeShapeIndices.length;
-
-                const prevPointIndex = activeShapeIndices[prevIndexInShape];
-                const nextPointIndex = activeShapeIndices[nextIndexInShape];
-
-                const key1 = [pointIndex, prevPointIndex].sort((a,b)=>a-b).join('-');
-                const key2 = [pointIndex, nextPointIndex].sort((a,b)=>a-b).join('-');
-                
-                if (lines.has(key1)) lines.get(key1).classList.add('active');
-                if (lines.has(key2)) lines.get(key2).classList.add('active');
-                
-            }, time);
-
-        }, Array.from(Array(activeShapeIndices.length).keys()), "4n"); // "4n" = cada negra
+        updateUI() {
+            this.dom.playBtn.textContent = this.state.isPlaying ? '■ Detener' : '▶ Iniciar';
+            this.dom.playBtn.classList.toggle('playing', this.state.isPlaying);
+            this.dom.octaveValue.textContent = this.state.octave;
+            this.dom.bpmValue.textContent = `${this.state.bpm} BPM`;
+            this.dom.bpmSlider.value = this.state.bpm;
+            
+            // Actualizar color de glow según la paleta
+            const colors = { celestial: '#a29bfe', psychedelic: '#fd79a8', mystic: '#00cec9' };
+            document.documentElement.style.setProperty('--glow-color', colors[this.state.sound]);
+        },
         
-        sequence.start(0);
-    }
-    
-    // --- MANEJO DE CONTROLES ---
-    playBtn.addEventListener('click', async () => {
-        await Tone.start();
-        if (Tone.Transport.state === 'started') {
-            Tone.Transport.stop();
-            playBtn.textContent = '▶ Iniciar';
-            playBtn.classList.remove('playing');
-            points.forEach(p => p.el.classList.remove('active'));
-            svg.querySelectorAll('line.active').forEach(l => l.classList.remove('active'));
-        } else {
-            updateShape(); // Asegurarse de tener la forma correcta
-            createSequence(); // Crear la secuencia con los nodos de la forma
-            Tone.Transport.start();
-            playBtn.textContent = '■ Detener';
-            playBtn.classList.add('playing');
+        updateShape() {
+            const [type, param1, param2] = this.state.shape.split('_');
+            const p1 = parseInt(param1);
+            const p2 = parseInt(param2);
+            this.svg.activeShapeIndices = [];
+            this.svg.lines.forEach(line => line.classList.remove('visible'));
+
+            let pointsToConnect = [];
+            switch(type) {
+                case 'circle': pointsToConnect = Array.from({length: p1}, (_, i) => i); break;
+                case 'tri': case 'sqr': case 'penta': case 'hexa': case 'hepta': case 'octa':
+                    const step = this.svg.numPoints / p1;
+                    for (let i = 0; i < p1; i++) pointsToConnect.push(Math.round(i * step));
+                    break;
+                case 'star':
+                    for (let i = 0; i < p1; i++) pointsToConnect.push(Math.round(i * p2) % p1);
+                    break;
+            }
+            this.svg.activeShapeIndices = pointsToConnect;
+            
+            for(let i=0; i < pointsToConnect.length; i++) {
+                const p1_idx = pointsToConnect[i];
+                const p2_idx = pointsToConnect[(i + 1) % pointsToConnect.length];
+                const key = [p1_idx, p2_idx].sort((a, b) => a - b).join('-');
+                if(this.svg.lines.has(key)) this.svg.lines.get(key).classList.add('visible');
+            }
+        },
+
+        // --- LÓGICA DE REPRODUCCIÓN ---
+        async togglePlayback() {
+            if (!this.audio.isInitialized) {
+                await Tone.start();
+                this.audio.isInitialized = true;
+            }
+            this.state.isPlaying = !this.state.isPlaying;
+            if (this.state.isPlaying) {
+                this.createSequence();
+                Tone.Transport.start();
+            } else {
+                Tone.Transport.stop();
+                if(this.audio.sequence) this.audio.sequence.dispose();
+                this.clearAllActiveVisuals();
+            }
+            this.updateUI();
+        },
+
+        getNotesForStep(rootNote) {
+            const rootWithOctave = rootNote + this.state.octave;
+            const scaleIntervals = this.audio.SCALES[this.state.scale];
+            const baseFreq = Tone.Frequency(rootWithOctave);
+
+            switch (this.state.mode) {
+                case 'melody':
+                    const randomNote1 = baseFreq.transpose(scaleIntervals[Math.floor(Math.random() * scaleIntervals.length)]).toNote();
+                    const randomNote2 = baseFreq.transpose(scaleIntervals[Math.floor(Math.random() * scaleIntervals.length)] + 12).toNote();
+                    return { notes: [rootWithOctave, randomNote1, randomNote2], duration: "4n" };
+                case 'arpeggio':
+                    const arpNotes = [rootWithOctave, baseFreq.transpose(scaleIntervals[2] || 3).toNote(), baseFreq.transpose(scaleIntervals[4] || 7).toNote()];
+                    return { notes: arpNotes, duration: "16n", type: 'arpeggio'};
+                case 'triad':
+                    const triadNotes = [rootWithOctave, baseFreq.transpose(scaleIntervals[2] || 3).toNote(), baseFreq.transpose(scaleIntervals[4] || 7).toNote()];
+                    return { notes: triadNotes, duration: "4n" };
+                case 'seventh':
+                    const seventhNotes = [rootWithOctave, baseFreq.transpose(scaleIntervals[2] || 3).toNote(), baseFreq.transpose(scaleIntervals[4] || 7).toNote(), baseFreq.transpose(scaleIntervals[6] || 10).toNote()];
+                    return { notes: seventhNotes, duration: "4n" };
+            }
+        },
+
+        createSequence() {
+            if (this.audio.sequence) {
+                this.audio.sequence.dispose();
+            }
+            this.audio.sequence = new Tone.Sequence((time, stepIndex) => {
+                const pointIndex = this.svg.activeShapeIndices[stepIndex];
+                const point = this.svg.points[pointIndex];
+                const musicalData = this.getNotesForStep(point.note);
+                
+                if (musicalData.type === 'arpeggio') {
+                    new Tone.Pattern((t, n) => {
+                        this.audio.activeSynth.triggerAttackRelease(n, '16n', t);
+                    }, musicalData.notes, 'up').start(time).stop(time + Tone.Time('4n').toSeconds());
+                } else if (this.state.mode === 'melody') {
+                    this.audio.activeSynth.triggerAttackRelease(musicalData.notes[0], "8n", time);
+                    this.audio.activeSynth.triggerAttackRelease(musicalData.notes[1], "16n", time + Tone.Time("16n").toSeconds());
+                    this.audio.activeSynth.triggerAttackRelease(musicalData.notes[2], "16n", time + Tone.Time("8n").toSeconds());
+                } else {
+                    this.audio.activeSynth.triggerAttackRelease(musicalData.notes, musicalData.duration, time);
+                }
+
+                Tone.Draw.schedule(() => {
+                    this.visualizeStep(pointIndex, musicalData.notes[0]);
+                }, time);
+
+            }, Array.from(Array(this.svg.activeShapeIndices.length).keys()), "4n").start(0);
+        },
+
+        // --- LÓGICA VISUAL ---
+        visualizeStep(pointIndex, noteName) {
+            this.clearAllActiveVisuals();
+            const point = this.svg.points[pointIndex];
+            point.el.classList.add('active');
+
+            // Iluminar líneas conectadas
+            this.svg.lines.forEach((line, key) => {
+                const [p1, p2] = key.split('-').map(Number);
+                if (line.classList.contains('visible') && (p1 === pointIndex || p2 === pointIndex)) {
+                    line.classList.add('active');
+                }
+            });
+
+            // Actualizar y mostrar la etiqueta de la nota
+            const labelOffset = 35;
+            const angle = (pointIndex / this.svg.numPoints) * 2 * Math.PI - Math.PI / 2;
+            const x = this.svg.centerX + (this.svg.radius + labelOffset) * Math.cos(angle);
+            const y = this.svg.centerY + (this.svg.radius + labelOffset) * Math.sin(angle);
+            this.dom.noteLabel.setAttribute('x', x);
+            this.dom.noteLabel.setAttribute('y', y);
+            this.dom.noteLabel.textContent = noteName;
+            this.dom.noteLabel.classList.add('visible');
+        },
+
+        clearAllActiveVisuals() {
+            this.svg.points.forEach(p => p.el.classList.remove('active'));
+            this.svg.lines.forEach(line => line.classList.remove('active'));
+            this.dom.noteLabel.classList.remove('visible');
         }
-    });
-    
-    // Al cambiar de forma, se actualiza en vivo si está sonando
-    shapeSelect.addEventListener('change', () => {
-        updateShape();
-        if (Tone.Transport.state === 'started') {
-            createSequence();
-        }
-    });
-    
-    // Inicializar con la forma por defecto
-    updateShape();
+    };
+
+    MusicalCircle.init();
 });
 </script>
 
