@@ -3,154 +3,266 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generador Musical Interactivo</title>
+    <title>Círculo de Quintas Geométrico</title>
     <style>
+        :root {
+            --bg-color: #1a1a1d;
+            --primary-color: #c3073f;
+            --secondary-color: #6f2232;
+            --text-color: #f5f5f5;
+            --highlight-color: #950740;
+        }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #121212;
-            color: #ffffff;
+            background-color: var(--bg-color);
+            color: var(--text-color);
             margin: 0;
+            overflow: hidden;
         }
-        .container {
-            background-color: #1e1e1e;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-            text-align: center;
+        .main-container {
+            display: flex;
+            align-items: center;
+            gap: 40px;
         }
-        h1 {
-            margin-top: 0;
-            color: #bb86fc;
+        #music-visualizer {
+            position: relative;
+            width: 400px;
+            height: 400px;
+        }
+        #circle-svg {
+            width: 100%;
+            height: 100%;
+        }
+        .note-text {
+            font-size: 20px;
+            fill: var(--text-color);
+            text-anchor: middle;
+            dominant-baseline: middle;
+            font-weight: bold;
+            pointer-events: none;
+        }
+        .note-circle {
+            fill: var(--secondary-color);
+            transition: fill 0.2s ease;
+        }
+        .note-circle.active {
+            fill: var(--primary-color);
+            stroke: var(--highlight-color);
+            stroke-width: 4px;
+        }
+        #shape-polygon {
+            fill: rgba(195, 7, 63, 0.25);
+            stroke: var(--primary-color);
+            stroke-width: 3px;
+            pointer-events: none;
+            transition: all 0.3s ease-in-out;
         }
         .controls {
-            margin: 20px 0;
-            display: flex;
-            gap: 15px;
-            justify-content: center;
+            background-color: rgba(0,0,0,0.2);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--secondary-color);
+            width: 250px;
+        }
+        .control-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #aaa;
         }
         select, button {
-            padding: 10px 15px;
+            width: 100%;
+            padding: 12px;
             font-size: 16px;
             border-radius: 8px;
-            border: 1px solid #333;
-            background-color: #333;
-            color: #ffffff;
+            border: none;
+            background-color: var(--secondary-color);
+            color: var(--text-color);
             cursor: pointer;
         }
         button {
-            background-color: #03dac6;
-            color: #000000;
+            background-color: var(--primary-color);
             font-weight: bold;
             transition: background-color 0.2s;
         }
         button:hover {
-            background-color: #018786;
+            background-color: var(--highlight-color);
+        }
+        .rotation-controls {
+            display: flex;
+            gap: 10px;
+        }
+        #info-display {
+            margin-top: 15px;
+            padding: 10px;
+            background: #2a2a2e;
+            border-radius: 8px;
+            min-height: 40px;
+            text-align: center;
+        }
+        #info-display h3 {
+            margin: 0 0 5px 0;
+            color: #aaa;
+            font-size: 14px;
+        }
+        #selected-notes {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--primary-color);
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>Generador Musical 🎵</h1>
-    <div class="controls">
-        <label for="root-note">Nota Raíz:</label>
-        <select id="root-note">
-            <option value="C4">Do</option>
-            <option value="C#4">Do#</option>
-            <option value="D4">Re</option>
-            <option value="D#4">Re#</option>
-            <option value="E4">Mi</option>
-            <option value="F4">Fa</option>
-            <option value="F#4">Fa#</option>
-            <option value="G4">Sol</option>
-            <option value="G#4">Sol#</option>
-            <option value="A4">La</option>
-            <option value="A#4">La#</option>
-            <option value="B4">Si</option>
-        </select>
+<h1>Círculo de Quintas Geométrico</h1>
 
-        <label for="music-type">Tipo:</label>
-        <select id="music-type">
-            <option value="major-chord">Acorde Mayor</option>
-            <option value="minor-chord">Acorde Menor</option>
-            <option value="major-scale">Escala Mayor</option>
-            <option value="minor-scale">Escala Menor</option>
-        </select>
+<div class="main-container">
+    <div id="music-visualizer">
+        <svg id="circle-svg" viewBox="0 0 400 400">
+            <polygon id="shape-polygon"/>
+        </svg>
     </div>
-    <button id="play-button">Tocar</button>
+
+    <div class="controls">
+        <div class="control-group">
+            <label for="shape-selector">Forma Geométrica</label>
+            <select id="shape-selector">
+                <option value="3">Triángulo (Acorde Aumentado)</option>
+                <option value="4">Cuadrado (Acorde Disminuido 7)</option>
+                <option value="6">Hexágono (Escala Tonos Enteros)</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <label>Rotación</label>
+            <div class="rotation-controls">
+                <button id="rotate-left">⟲</button>
+                <button id="rotate-right">⟳</button>
+            </div>
+        </div>
+        <button id="play-button">Tocar Selección</button>
+        <div id="info-display">
+            <h3>Notas Seleccionadas</h3>
+            <div id="selected-notes">C - E - G#</div>
+        </div>
+    </div>
 </div>
+
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
 <script>
-    // Inicializar el sintetizador
-    const synth = new Tone.PolySynth(Tone.Synth).toDestination();
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- CONFIGURACIÓN INICIAL ---
+        const synth = new Tone.PolySynth(Tone.Synth).toDestination();
+        const svg = document.getElementById('circle-svg');
+        const shapePolygon = document.getElementById('shape-polygon');
+        const selectedNotesDiv = document.getElementById('selected-notes');
+        const shapeSelector = document.getElementById('shape-selector');
+        const rotateLeftBtn = document.getElementById('rotate-left');
+        const rotateRightBtn = document.getElementById('rotate-right');
+        const playButton = document.getElementById('play-button');
 
-    // Notas de la escala cromática para facilitar los cálculos
-    const chromaticScale = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+        const notesInCircle = [ // Ordenado por círculo de quintas
+            { name: 'C', scientific: 'C4' }, { name: 'G', scientific: 'G4' },
+            { name: 'D', scientific: 'D4' }, { name: 'A', scientific: 'A4' },
+            { name: 'E', scientific: 'E4' }, { name: 'B', scientific: 'B4' },
+            { name: 'F#', scientific: 'F#4' }, { name: 'C#', scientific: 'C#4' },
+            { name: 'G#', scientific: 'G#4' }, { name: 'D#', scientific: 'D#4' },
+            { name: 'A#', scientific: 'A#4' }, { name: 'F', scientific: 'F4' }
+        ];
 
-    // Función para obtener una nota subiendo un número de semitonos desde una raíz
-    function getNote(rootNote, semitones) {
-        const octave = parseInt(rootNote.slice(-1));
-        const noteName = rootNote.slice(0, -1);
-        const rootIndex = chromaticScale.indexOf(noteName);
-        
-        const newIndex = (rootIndex + semitones) % 12;
-        let newOctave = octave + Math.floor((rootIndex + semitones) / 12);
-        
-        return chromaticScale[newIndex] + newOctave;
-    }
+        const centerX = 200, centerY = 200, radius = 170, noteRadius = 30;
+        let currentRotation = 0; // en pasos de nota (0-11)
+        let numVertices = 3; // Empezar con un triángulo
 
-    document.getElementById('play-button').addEventListener('click', async () => {
-        // Iniciar el contexto de audio (necesario para la mayoría de navegadores)
-        await Tone.start();
+        // --- FUNCIONES DE DIBUJO Y LÓGICA ---
+        function drawCircle() {
+            notesInCircle.forEach((note, i) => {
+                const angle = (i / 12) * 2 * Math.PI - (Math.PI / 2); // Empezar en la parte superior
+                const x = centerX + radius * Math.cos(angle);
+                const y = centerY + radius * Math.sin(angle);
 
-        const rootNote = document.getElementById('root-note').value;
-        const musicType = document.getElementById('music-type').value;
+                // Círculo de la nota
+                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                circle.setAttribute('id', `note-bg-${i}`);
+                circle.setAttribute('class', 'note-circle');
+                circle.setAttribute('cx', x);
+                circle.setAttribute('cy', y);
+                circle.setAttribute('r', noteRadius);
+                svg.appendChild(circle);
 
-        let notesToPlay = [];
-
-        switch(musicType) {
-            case 'major-chord':
-                // Tónica (0), Tercera Mayor (4), Quinta Justa (7)
-                notesToPlay = [getNote(rootNote, 0), getNote(rootNote, 4), getNote(rootNote, 7)];
-                synth.triggerAttackRelease(notesToPlay, "1s");
-                break;
-            
-            case 'minor-chord':
-                // Tónica (0), Tercera Menor (3), Quinta Justa (7)
-                notesToPlay = [getNote(rootNote, 0), getNote(rootNote, 3), getNote(rootNote, 7)];
-                synth.triggerAttackRelease(notesToPlay, "1s");
-                break;
-
-            case 'major-scale':
-                // Patrón T-T-S-T-T-T-S (2-2-1-2-2-2-1 semitonos)
-                const majorSteps = [0, 2, 4, 5, 7, 9, 11, 12];
-                notesToPlay = majorSteps.map(step => getNote(rootNote, step));
-                playSequence(notesToPlay);
-                break;
-
-            case 'minor-scale':
-                // Patrón T-S-T-T-S-T-T (2-1-2-2-1-2-2 semitonos)
-                const minorSteps = [0, 2, 3, 5, 7, 8, 10, 12];
-                notesToPlay = minorSteps.map(step => getNote(rootNote, step));
-                playSequence(notesToPlay);
-                break;
+                // Texto de la nota
+                const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                text.setAttribute('class', 'note-text');
+                text.setAttribute('x', x);
+                text.setAttribute('y', y);
+                text.textContent = note.name;
+                svg.appendChild(text);
+            });
+            svg.appendChild(shapePolygon); // Asegurarse que la forma está encima
         }
-    });
 
-    // Función para tocar las notas de una escala en secuencia
-    function playSequence(notes) {
-        const now = Tone.now();
-        notes.forEach((note, index) => {
-            synth.triggerAttackRelease(note, "8n", now + index * 0.3);
+        function updateSelectionAndShape() {
+            const points = [];
+            const selectedNotes = [];
+            
+            // Limpiar selección previa
+            document.querySelectorAll('.note-circle.active').forEach(c => c.classList.remove('active'));
+
+            for (let i = 0; i < numVertices; i++) {
+                const step = 12 / numVertices;
+                const noteIndex = (currentRotation + i * step) % 12;
+                selectedNotes.push(notesInCircle[noteIndex]);
+
+                // Resaltar círculo de nota
+                document.getElementById(`note-bg-${noteIndex}`).classList.add('active');
+                
+                // Calcular puntos para el polígono
+                const angle = (noteIndex / 12) * 2 * Math.PI - (Math.PI / 2);
+                const x = centerX + radius * Math.cos(angle);
+                const y = centerY + radius * Math.sin(angle);
+                points.push(`${x},${y}`);
+            }
+            
+            shapePolygon.setAttribute('points', points.join(' '));
+            selectedNotesDiv.textContent = selectedNotes.map(n => n.name).join(' - ');
+
+            return selectedNotes.map(n => n.scientific);
+        }
+
+        // --- EVENT LISTENERS ---
+        shapeSelector.addEventListener('change', (e) => {
+            numVertices = parseInt(e.target.value, 10);
+            updateSelectionAndShape();
         });
-    }
 
+        rotateLeftBtn.addEventListener('click', () => {
+            currentRotation = (currentRotation - 1 + 12) % 12;
+            updateSelectionAndShape();
+        });
+
+        rotateRightBtn.addEventListener('click', () => {
+            currentRotation = (currentRotation + 1) % 12;
+            updateSelectionAndShape();
+        });
+
+        playButton.addEventListener('click', async () => {
+            await Tone.start();
+            const notesToPlay = updateSelectionAndShape();
+            synth.triggerAttackRelease(notesToPlay, "1s");
+        });
+
+        // --- INICIALIZACIÓN ---
+        drawCircle();
+        updateSelectionAndShape();
+    });
 </script>
 
 </body>
