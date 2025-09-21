@@ -3,98 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generador de Tonos - Círculo de Quintas</title>
+    <title>Generador Musical Interactivo</title>
     <style>
         body {
-            font-family: sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #f0f0f0;
+            background-color: #121212;
+            color: #ffffff;
             margin: 0;
         }
-        .circle-container {
-            position: relative;
-            width: 300px;
-            height: 300px;
-            border-radius: 50%;
-            border: 2px solid #333;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+        .container {
+            background-color: #1e1e1e;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            text-align: center;
         }
-        .note {
-            position: absolute;
-            width: 60px;
-            height: 60px;
-            background-color: #4CAF50;
-            color: white;
-            border-radius: 50%;
+        h1 {
+            margin-top: 0;
+            color: #bb86fc;
+        }
+        .controls {
+            margin: 20px 0;
             display: flex;
+            gap: 15px;
             justify-content: center;
-            align-items: center;
-            font-size: 1.2em;
+        }
+        select, button {
+            padding: 10px 15px;
+            font-size: 16px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            background-color: #333;
+            color: #ffffff;
             cursor: pointer;
-            user-select: none;
+        }
+        button {
+            background-color: #03dac6;
+            color: #000000;
+            font-weight: bold;
             transition: background-color 0.2s;
         }
-        .note:hover {
-            background-color: #45a049;
+        button:hover {
+            background-color: #018786;
         }
     </style>
 </head>
 <body>
 
-<div class="circle-container">
-    <div class="note" id="C4">C</div>
-    <div class="note" id="G4">G</div>
-    <div class="note" id="D4">D</div>
-    <div class="note" id="A4">A</div>
-    <div class="note" id="E4">E</div>
-    <div class="note" id="B4">B</div>
-    <div class="note" id="Fsharp4">F#</div>
-    <div class="note" id="Csharp4">C#</div>
-    <div class="note" id="Gsharp4">G#</div>
-    <div class="note" id="Dsharp4">D#</div>
-    <div class="note" id="Asharp4">A#</div>
-    <div class="note" id="F4">F</div>
+<div class="container">
+    <h1>Generador Musical 🎵</h1>
+    <div class="controls">
+        <label for="root-note">Nota Raíz:</label>
+        <select id="root-note">
+            <option value="C4">Do</option>
+            <option value="C#4">Do#</option>
+            <option value="D4">Re</option>
+            <option value="D#4">Re#</option>
+            <option value="E4">Mi</option>
+            <option value="F4">Fa</option>
+            <option value="F#4">Fa#</option>
+            <option value="G4">Sol</option>
+            <option value="G#4">Sol#</option>
+            <option value="A4">La</option>
+            <option value="A#4">La#</option>
+            <option value="B4">Si</option>
+        </select>
+
+        <label for="music-type">Tipo:</label>
+        <select id="music-type">
+            <option value="major-chord">Acorde Mayor</option>
+            <option value="minor-chord">Acorde Menor</option>
+            <option value="major-scale">Escala Mayor</option>
+            <option value="minor-scale">Escala Menor</option>
+        </select>
+    </div>
+    <button id="play-button">Tocar</button>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
 <script>
-    const synth = new Tone.Synth().toDestination();
+    // Inicializar el sintetizador
+    const synth = new Tone.PolySynth(Tone.Synth).toDestination();
 
-    const notes = {
-        "C4": 261.63,
-        "G4": 392.00,
-        "D4": 293.66,
-        "A4": 440.00,
-        "E4": 329.63,
-        "B4": 493.88,
-        "Fsharp4": 369.99,
-        "Csharp4": 277.18,
-        "Gsharp4": 415.30,
-        "Dsharp4": 311.13,
-        "Asharp4": 466.16,
-        "F4": 349.23
-    };
+    // Notas de la escala cromática para facilitar los cálculos
+    const chromaticScale = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 
-    const circle = document.querySelector('.circle-container');
-    const noteElements = document.querySelectorAll('.note');
-    const radius = 120; // Radio del círculo
+    // Función para obtener una nota subiendo un número de semitonos desde una raíz
+    function getNote(rootNote, semitones) {
+        const octave = parseInt(rootNote.slice(-1));
+        const noteName = rootNote.slice(0, -1);
+        const rootIndex = chromaticScale.indexOf(noteName);
+        
+        const newIndex = (rootIndex + semitones) % 12;
+        let newOctave = octave + Math.floor((rootIndex + semitones) / 12);
+        
+        return chromaticScale[newIndex] + newOctave;
+    }
 
-    noteElements.forEach((noteEl, index) => {
-        const angle = (index / noteElements.length) * 2 * Math.PI - (Math.PI / 2);
-        const x = Math.cos(angle) * radius;
-        const y = Math.sin(angle) * radius;
-        noteEl.style.transform = `translate(${x}px, ${y}px)`;
+    document.getElementById('play-button').addEventListener('click', async () => {
+        // Iniciar el contexto de audio (necesario para la mayoría de navegadores)
+        await Tone.start();
 
-        noteEl.addEventListener('click', () => {
-            const noteName = noteEl.id;
-            synth.triggerAttackRelease(notes[noteName], "8n");
-        });
+        const rootNote = document.getElementById('root-note').value;
+        const musicType = document.getElementById('music-type').value;
+
+        let notesToPlay = [];
+
+        switch(musicType) {
+            case 'major-chord':
+                // Tónica (0), Tercera Mayor (4), Quinta Justa (7)
+                notesToPlay = [getNote(rootNote, 0), getNote(rootNote, 4), getNote(rootNote, 7)];
+                synth.triggerAttackRelease(notesToPlay, "1s");
+                break;
+            
+            case 'minor-chord':
+                // Tónica (0), Tercera Menor (3), Quinta Justa (7)
+                notesToPlay = [getNote(rootNote, 0), getNote(rootNote, 3), getNote(rootNote, 7)];
+                synth.triggerAttackRelease(notesToPlay, "1s");
+                break;
+
+            case 'major-scale':
+                // Patrón T-T-S-T-T-T-S (2-2-1-2-2-2-1 semitonos)
+                const majorSteps = [0, 2, 4, 5, 7, 9, 11, 12];
+                notesToPlay = majorSteps.map(step => getNote(rootNote, step));
+                playSequence(notesToPlay);
+                break;
+
+            case 'minor-scale':
+                // Patrón T-S-T-T-S-T-T (2-1-2-2-1-2-2 semitonos)
+                const minorSteps = [0, 2, 3, 5, 7, 8, 10, 12];
+                notesToPlay = minorSteps.map(step => getNote(rootNote, step));
+                playSequence(notesToPlay);
+                break;
+        }
     });
+
+    // Función para tocar las notas de una escala en secuencia
+    function playSequence(notes) {
+        const now = Tone.now();
+        notes.forEach((note, index) => {
+            synth.triggerAttackRelease(note, "8n", now + index * 0.3);
+        });
+    }
+
 </script>
 
 </body>
